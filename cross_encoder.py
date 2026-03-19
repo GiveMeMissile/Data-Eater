@@ -1,6 +1,6 @@
 from sentence_transformers import CrossEncoder
 
-MODEL = 'sentence-transformers/all-MiniLM-L6-v2'
+MODEL = 'cross-encoder/stsb-roberta-base'
 
 class CrossEncoding:
     # A more advanced filter used to determine te similarity between two texts.

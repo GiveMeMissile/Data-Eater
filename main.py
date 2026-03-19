@@ -5,7 +5,7 @@ from dearpygui import dearpygui as dpg
 # Filter Slider ✔
 # Filter Input ✔
 # File Selection ✔
-# Bi Encoding Confidence 
+# Bi Encoding Confidence ✔
 # Number of Samples ✔
 # OverFlow Samples ✔
 

@@ -4,6 +4,9 @@ import math
 MODEL = 'sentence-transformers/all-MiniLM-L6-v2'
 
 class BiEncoder:
+    # A Quick method to see if two sentences are similar or not.
+    # Will be used to quickly filter out unrelated text from the rest of the relevant data. 
+
     def __init__(self, texts):
         self.model = SentenceTransformer(MODEL)
         self.pythagorean = lambda x: math.sqrt(sum([x[i]**2 for i in range(len(x))]))
