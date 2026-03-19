@@ -12,7 +12,9 @@ class Parser:
         for quote_html in quotes_html:
             quote_text = quote_html.find("span", class_="text").text
             quote_author = quote_html.find("small", class_="author").text
-            print(quote_author)
             quotes.append((quote_text, quote_author))
-        next_url = soup.find("li", class_="next").a["href"]
+        try:
+            next_url = soup.find("li", class_="next").a["href"]
+        except Exception:
+            next_url = None
         return quotes, next_url
