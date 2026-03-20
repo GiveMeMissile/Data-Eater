@@ -1,0 +1,13 @@
+# GUI option configuration:
+gui: 
+  steps: 50
+  min_bi_encoding: 0
+  max_bi_encoding: 1
+  default_bi_encoding: 0.5
+  max_input_box: 10
+  min_input_box: 1
+  default_input_box: 3
+
+# AI model selection
+bi_encoder_model_name: "sentence-transformers/all-MiniLM-L6-v2"
+cross_encoder_model_name: "cross-encoder/stsb-roberta-base-v1"
