@@ -7,7 +7,11 @@ class CrossEncoding:
     # Acts as a final filter before the data is saved into the dataset. 
 
     def __init__(self, texts):
-        self.model = CrossEncoder(c.CROSS_ENCODER_MODEL)
+        try:
+            self.model = CrossEncoder(c.CROSS_ENCODER_MODEL)
+        except Exception:
+            print(f"Unable to load model {c.CROSS_ENCODER_MODEL} for cross encoding, defaulting to {c.BACKUP_CROSS_ENCODER_MODEL}")
+            self.model = CrossEncoder(c.BACKUP_CROSS_ENCODER_MODEL)
         self.texts = texts
 
     def compare(self, text):

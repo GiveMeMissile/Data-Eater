@@ -10,9 +10,8 @@ import constants as c
 # Number of Samples ✔
 # OverFlow Samples ✔
 
-OPTION_WINDOW = "select"
 num_inputs = c.DEFAULT_INPUT
-input_name = "Word"
+input_name = c.FILTER_OPTION_2
 user_inputs = ["", "", "", "", "", "", "", "", "", ""]
 
 
@@ -32,10 +31,10 @@ def delete_previous_input():
     dpg.delete_item(input_name)
     for i in range(num_inputs):
         dpg.delete_item(input_name + "_" + str(i))
-    if dpg.does_item_exist("similarity_text"):
-        dpg.delete_item("similarity_text")
-    if dpg.does_item_exist("similarity"):
-        dpg.delete_item("similarity")
+    if dpg.does_item_exist(c.SIMILARITY_TEXT_TAG):
+        dpg.delete_item(c.SIMILARITY_TEXT_TAG)
+    if dpg.does_item_exist(c.SIMILARITY_SELECT_TAG):
+        dpg.delete_item(c.SIMILARITY_SELECT_TAG)
 
 
 def set_up_input():
@@ -47,34 +46,34 @@ def set_up_input():
         max_value=c.MAX_INPUT, 
         min_clamped=True,
         max_clamped=True,
-        parent=OPTION_WINDOW,
+        parent=c.OPTION_WINDOW_TAG,
         callback=update_inputs,
-        before="sample_num_text"
+        before=c.SAMPLE_TEXT_TAG
     )
 
     for i in range(num_inputs):
         dpg.add_input_text(
             label=input_name + " Input", 
             tag=input_name + "_" + str(i), 
-            parent=OPTION_WINDOW,
+            parent=c.OPTION_WINDOW_TAG,
             callback=save_input,
             default_value=user_inputs[i],
-            before="sample_num_text"
+            before=c.SAMPLE_TEXT_TAG
         )
     
     if input_name == "Sample":
         dpg.add_text(
             "Input the minimum similarity between your sample and a different text in order for that text to be included in the sample",
-            tag="similarity_text",
-            parent=OPTION_WINDOW,
-            before="file_text"
+            tag=c.SIMILARITY_TEXT_TAG,
+            parent=c.OPTION_WINDOW_TAG,
+            before=c.FILE_TEXT_TAG
         )
         dpg.add_slider_float(
             label="Similarity",
-            tag="similarity",
-            parent=OPTION_WINDOW,
+            tag=c.SIMILARITY_SELECT_TAG,
+            parent=c.OPTION_WINDOW_TAG,
             default_value=c.DEFAULT_BI,
-            before="file_text",
+            before=c.FILE_TEXT_TAG,
             min_value=c.MIN_BI,
             max_value=c.MAX_BI
         )
@@ -92,27 +91,27 @@ if __name__ == "__main__":
     dpg.create_context()
     dpg.create_viewport(width=800, height=500)
 
-    with dpg.window(label="Select", width=800, height=400, tag=OPTION_WINDOW):
+    with dpg.window(label="Select", width=800, height=400, tag=c.OPTION_WINDOW_TAG):
 
         # Filter Selection
         dpg.add_text("Select options for scraping")
         dpg.add_text("Select which filter is going to be used")
-        dpg.add_radio_button(label="Filter", items=["Word", "Sample"], tag="filter", default_value=input_name, callback=input_option)
+        dpg.add_radio_button(label="Filter", items=[c.FILTER_OPTION_1, c.FILTER_OPTION_2], tag=c.FILTER_SELECT_TAG, default_value=input_name, callback=input_option)
 
         # Filter input
-        dpg.add_text("Below type in each value you want to filter your dataset with", tag="input_text")
+        dpg.add_text("Below type in each value you want to filter your dataset with", tag=c.FILTER_TEXT_TAG)
 
         # Dataset Sample
-        dpg.add_text("Select the number of samples to be in the final dataset", tag="sample_num_text")
-        dpg.add_input_int(label="Sample Number", step=c.NUM_SAMPLE_STEPS, tag="sample_num", min_value=50, min_clamped=True, default_value=100)
+        dpg.add_text("Select the number of samples to be in the final dataset", tag=c.SAMPLE_TEXT_TAG)
+        dpg.add_input_int(label="Sample Number", step=c.NUM_SAMPLE_STEPS, tag=c.SAMPLE_TAG, min_value=c.MIN_SAMPLE, min_clamped=True, default_value=c.DEFAULT_SAMPLE)
 
         # Dataset Overflow
         dpg.add_text("Select the amount of overflow samples")
-        dpg.add_input_int(label="Overflow", tag="overflow", min_value=1, min_clamped=True, max_value=10, max_clamped=True, default_value=3)
+        dpg.add_input_int(label="Overflow", tag=c.OVERFLOW_SELECT_TAG, min_value=c.MIN_OVERFLOW, min_clamped=True, max_value=c.MAX_OVERFLOW, max_clamped=True, default_value=c.DEFAULT_OVERFLOW)
 
         # File Selection
-        dpg.add_text("Select which file type you wish to save your data in", tag="file_text")
-        dpg.add_radio_button(label="File Type", items=["CSV", "Parquet", "JSONL", "SQLite"], default_value="CSV", tag="file")
+        dpg.add_text("Select which file type you wish to save your data in", tag=c.FILE_TEXT_TAG)
+        dpg.add_radio_button(label="File Type", items=["CSV", "Parquet", "JSONL", "SQLite"], default_value="CSV", tag=c.FILE_SELECT_TAG)
 
         # Set up Filter Inputs
         set_up_input()

@@ -7,7 +7,11 @@ class BiEncoder:
     # Will be used to quickly filter out unrelated text from the rest of the relevant data. 
 
     def __init__(self, texts):
-        self.model = SentenceTransformer(c.BI_ENCODER_MODEL)
+        try:
+            self.model = SentenceTransformer(c.BI_ENCODER_MODEL)
+        except Exception:
+            print(f"Unable to load model {c.BI_ENCODER_MODEL} for bi encoding, defaulting to {c.BACKUP_BI_ENCODER_MODEL}")
+            self.model = SentenceTransformer(c.BACKUP_CROSS_ENCODER_MODEL)
         self.pythagorean = lambda x: math.sqrt(sum([x[i]**2 for i in range(len(x))]))
         self.text_vectors = self.model.encode(texts)
 
