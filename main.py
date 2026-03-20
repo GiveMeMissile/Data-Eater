@@ -1,4 +1,5 @@
 from dearpygui import dearpygui as dpg
+import constants as c
 
 # Options to be added:
 # Filter Selection ✔
@@ -10,9 +11,7 @@ from dearpygui import dearpygui as dpg
 # OverFlow Samples ✔
 
 OPTION_WINDOW = "select"
-MIN_INPUT = 1
-MAX_INPUT = 10
-num_inputs = 3
+num_inputs = c.DEFAULT_INPUT
 input_name = "Word"
 user_inputs = ["", "", "", "", "", "", "", "", "", ""]
 
@@ -44,8 +43,8 @@ def set_up_input():
         label="Number of " + input_name + "s you wish to use", 
         tag=input_name, 
         default_value=num_inputs, 
-        min_value=MIN_INPUT, 
-        max_value=MAX_INPUT, 
+        min_value=c.MIN_INPUT, 
+        max_value=c.MAX_INPUT, 
         min_clamped=True,
         max_clamped=True,
         parent=OPTION_WINDOW,
@@ -74,10 +73,10 @@ def set_up_input():
             label="Similarity",
             tag="similarity",
             parent=OPTION_WINDOW,
-            default_value=0.5,
+            default_value=c.DEFAULT_BI,
             before="file_text",
-            min_value=0,
-            max_value=1
+            min_value=c.MIN_BI,
+            max_value=c.MAX_BI
         )
 
 
@@ -105,7 +104,7 @@ if __name__ == "__main__":
 
         # Dataset Sample
         dpg.add_text("Select the number of samples to be in the final dataset", tag="sample_num_text")
-        dpg.add_input_int(label="Sample Number", step=50, tag="sample_num", min_value=50, min_clamped=True, default_value=100)
+        dpg.add_input_int(label="Sample Number", step=c.NUM_SAMPLE_STEPS, tag="sample_num", min_value=50, min_clamped=True, default_value=100)
 
         # Dataset Overflow
         dpg.add_text("Select the amount of overflow samples")

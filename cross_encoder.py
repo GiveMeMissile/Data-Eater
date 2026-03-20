@@ -1,6 +1,5 @@
 from sentence_transformers import CrossEncoder
-
-MODEL = 'cross-encoder/stsb-roberta-base'
+import constants as c
 
 class CrossEncoding:
     # A more advanced filter used to determine te similarity between two texts.
@@ -8,7 +7,7 @@ class CrossEncoding:
     # Acts as a final filter before the data is saved into the dataset. 
 
     def __init__(self, texts):
-        self.model = CrossEncoder(MODEL)
+        self.model = CrossEncoder(c.CROSS_ENCODER_MODEL)
         self.texts = texts
 
     def compare(self, text):
