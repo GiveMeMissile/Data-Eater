@@ -16,3 +16,8 @@ gui:
 # AI model selection
 bi_encoder_model_name: "sentence-transformers/all-MiniLM-L6-v2"
 cross_encoder_model_name: "cross-encoder/stsb-roberta-base"
+
+scraper:
+  browser: "msedge"
+  headless: true
+  data_batch_size: 1000 # Test value, don't use this value for actual data scraping, may cause additional overflow and increase runtime

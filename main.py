@@ -1,7 +1,14 @@
 from dearpygui import dearpygui as dpg
+from playwright.async_api import async_playwright
+from dearpygui_async import DearPyGuiAsync
+from navigator import Navigator
+from parser import Parser
+from bi_encoder import BiEncoder
+from cross_encoder import CrossEncoder
+from data_manager import DataManager
 import constants as c
 import asyncio
-from playwright.async_api import async_playwright
+import utils
 
 # Options to be added:
 # Filter Selection ✔
@@ -16,7 +23,9 @@ num_inputs = c.DEFAULT_INPUT
 input_name = c.FILTER_OPTION_2
 user_inputs = ["", "", "", "", "", "", "", "", "", ""]
 started = False
+file_save_type = "CSV"
 
+dpg_async = DearPyGuiAsync()
 
 def save_input(selector, app_data):
     idx = int(selector.replace(input_name + "_", ""))
@@ -89,32 +98,46 @@ def update_inputs(selector, app_data):
     set_up_input()
 
 
-def can_start():
+def change_save_file(sender, app_data):
+    global file_save_type
+    file_save_type = app_data
+
+
+async def can_start():
     for i in range(num_inputs):
         if dpg.get_value(input_name + "_" + str(i)) == "":
             return False
     return True
 
 
-def start():
+async def start(sender, app_data):
     global started
-    if not can_start():
-        dpg.add_text("Cannot start as some options have not been filled out...", parent=c.OPTION_WINDOW_TAG, before=c.SUBMIT_TAG, tag=c.FAILED_TAG)
+    if not await can_start():
+        if not dpg.does_item_exist(c.FAILED_TAG):
+            dpg.add_text("Cannot start as some options have not been filled out...", parent=c.OPTION_WINDOW_TAG, before=c.SUBMIT_TAG, tag=c.FAILED_TAG)
         dpg.set_item_label(c.SUBMIT_TAG, "Submit - Failed")
         return
     dpg.delete_item(c.OPTION_WINDOW_TAG)
-    started = True
+
+    async with async_playwright() as playwright:
+        browser = await playwright.chromium.launch(channel=c.BROWSER, headless=c.HEADLESS)
+        page = await browser.new_page()
+        await page.goto("https://quotes.toscrape.com")
+        print(page.url)
+        nav = Navigator(page)
+        parser = Parser()
+        data = await nav.harvest_data(parser)
 
 
 if __name__ == "__main__":
 
     dpg.create_context()
-    dpg.create_viewport(width=800, height=500)
+    dpg.create_viewport(width=800, height=600)
 
-    with dpg.window(label="Display", width=800, height=400, tag=c.DISPLAY_WINDOW_TAG):
+    with dpg.window(label="Display", width=800, height=600, tag=c.DISPLAY_WINDOW_TAG):
         dpg.add_text("Display")
 
-    with dpg.window(label="Select", width=800, height=400, tag=c.OPTION_WINDOW_TAG):
+    with dpg.window(label="Select", width=800, height=600, tag=c.OPTION_WINDOW_TAG):
 
         # Filter Selection
         dpg.add_text("Select options for scraping")
@@ -134,7 +157,7 @@ if __name__ == "__main__":
 
         # File Selection
         dpg.add_text("Select which file type you wish to save your data in", tag=c.FILE_TEXT_TAG)
-        dpg.add_radio_button(label="File Type", items=["CSV", "Parquet", "JSONL", "SQLite"], default_value="CSV", tag=c.FILE_SELECT_TAG)
+        dpg.add_radio_button(label="File Type", items=["CSV", "Parquet", "JSONL", "SQLite"], default_value="CSV", tag=c.FILE_SELECT_TAG, callback=change_save_file)
 
         dpg.add_text("Click the button below to submit and start the data collection process")
         dpg.add_button(label="Submit", tag=c.SUBMIT_TAG, callback=start)
@@ -146,8 +169,6 @@ if __name__ == "__main__":
     dpg.setup_dearpygui()
     dpg.show_viewport()
 
-    while dpg.is_dearpygui_running():
-        # Will be used for display later
-        dpg.render_dearpygui_frame()
+    dpg_async.run()
 
     dpg.destroy_context()

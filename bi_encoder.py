@@ -1,6 +1,7 @@
 from sentence_transformers import SentenceTransformer
 import math
 import constants as c
+import asyncio
 
 class BiEncoder:
     # A Quick method to see if two sentences are similar or not.

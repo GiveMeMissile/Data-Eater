@@ -1,5 +1,6 @@
 from sentence_transformers import CrossEncoder
 import constants as c
+import asyncio
 
 class CrossEncoding:
     # A more advanced filter used to determine te similarity between two texts.
