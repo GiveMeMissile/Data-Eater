@@ -1,5 +1,7 @@
 from dearpygui import dearpygui as dpg
 import constants as c
+import asyncio
+from playwright.async_api import async_playwright
 
 # Options to be added:
 # Filter Selection ✔
@@ -13,6 +15,7 @@ import constants as c
 num_inputs = c.DEFAULT_INPUT
 input_name = c.FILTER_OPTION_2
 user_inputs = ["", "", "", "", "", "", "", "", "", ""]
+started = False
 
 
 def save_input(selector, app_data):
@@ -86,10 +89,30 @@ def update_inputs(selector, app_data):
     set_up_input()
 
 
+def can_start():
+    for i in range(num_inputs):
+        if dpg.get_value(input_name + "_" + str(i)) == "":
+            return False
+    return True
+
+
+def start():
+    global started
+    if not can_start():
+        dpg.add_text("Cannot start as some options have not been filled out...", parent=c.OPTION_WINDOW_TAG, before=c.SUBMIT_TAG, tag=c.FAILED_TAG)
+        dpg.set_item_label(c.SUBMIT_TAG, "Submit - Failed")
+        return
+    dpg.delete_item(c.OPTION_WINDOW_TAG)
+    started = True
+
+
 if __name__ == "__main__":
 
     dpg.create_context()
     dpg.create_viewport(width=800, height=500)
+
+    with dpg.window(label="Display", width=800, height=400, tag=c.DISPLAY_WINDOW_TAG):
+        dpg.add_text("Display")
 
     with dpg.window(label="Select", width=800, height=400, tag=c.OPTION_WINDOW_TAG):
 
@@ -112,6 +135,9 @@ if __name__ == "__main__":
         # File Selection
         dpg.add_text("Select which file type you wish to save your data in", tag=c.FILE_TEXT_TAG)
         dpg.add_radio_button(label="File Type", items=["CSV", "Parquet", "JSONL", "SQLite"], default_value="CSV", tag=c.FILE_SELECT_TAG)
+
+        dpg.add_text("Click the button below to submit and start the data collection process")
+        dpg.add_button(label="Submit", tag=c.SUBMIT_TAG, callback=start)
 
         # Set up Filter Inputs
         set_up_input()

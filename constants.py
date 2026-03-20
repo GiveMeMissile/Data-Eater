@@ -25,6 +25,8 @@ MAX_OVERFLOW = config["gui"]["overflow_max"]
 DEFAULT_OVERFLOW = config["gui"]["default_overflow"]
 
 # GUI Tags:
+
+# Option Tags: 
 OPTION_WINDOW_TAG = "select"
 FILTER_SELECT_TAG = "filter"
 FILTER_OPTION_1 = "Word"
@@ -37,6 +39,11 @@ FILE_SELECT_TAG = "file"
 SIMILARITY_TEXT_TAG = "similarity_text"
 SIMILARITY_SELECT_TAG = "similarity"
 OVERFLOW_SELECT_TAG = "overflow"
+SUBMIT_TAG = "submit"
+FAILED_TAG = "fail_text"
+
+# Display Tags:
+DISPLAY_WINDOW_TAG = "display"
 
 # AI Model Options:
 BI_ENCODER_MODEL = config["bi_encoder_model_name"]
