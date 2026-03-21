@@ -15,7 +15,6 @@ class Parser:
             quotes.append((quote_text, quote_author))
         try:
             url += (soup.find("li", class_="next").a["href"]).replace("/", "", 1)
-            print(url)
         except Exception:
             url = None
         return quotes, url

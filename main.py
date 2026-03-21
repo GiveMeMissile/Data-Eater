@@ -4,26 +4,16 @@ from dearpygui_async import DearPyGuiAsync
 from navigator import Navigator
 from parser import Parser
 from bi_encoder import BiEncoder
-from cross_encoder import CrossEncoder
+from cross_encoder import CrossEncoding
 from data_manager import DataManager
 import constants as c
 import asyncio
 import utils
 
-# Options to be added:
-# Filter Selection ✔
-# Filter Slider ✔
-# Filter Input ✔
-# File Selection ✔
-# Bi Encoding Confidence ✔
-# Number of Samples ✔
-# OverFlow Samples ✔
-
 num_inputs = c.DEFAULT_INPUT
 input_name = c.FILTER_OPTION_2
-user_inputs = ["", "", "", "", "", "", "", "", "", ""]
+user_inputs = ["When life is hard, you must be harder", "", "", "", "", "", "", "", "", ""]
 started = False
-file_save_type = "CSV"
 
 dpg_async = DearPyGuiAsync()
 
@@ -92,18 +82,17 @@ def set_up_input():
 
 
 def update_inputs(selector, app_data):
+    # Updates the inputs when the input value is changed
+
     global num_inputs
     delete_previous_input()
     num_inputs = app_data
     set_up_input()
 
 
-def change_save_file(sender, app_data):
-    global file_save_type
-    file_save_type = app_data
-
-
 async def can_start():
+    # Checks if the start function is allowed to start
+
     for i in range(num_inputs):
         if dpg.get_value(input_name + "_" + str(i)) == "":
             return False
@@ -111,22 +100,53 @@ async def can_start():
 
 
 async def start(sender, app_data):
+    # Core function which runs the scraping and processing of data. 
+
+    # Check if the process can begin
     global started
     if not await can_start():
         if not dpg.does_item_exist(c.FAILED_TAG):
             dpg.add_text("Cannot start as some options have not been filled out...", parent=c.OPTION_WINDOW_TAG, before=c.SUBMIT_TAG, tag=c.FAILED_TAG)
         dpg.set_item_label(c.SUBMIT_TAG, "Submit - Failed")
         return
+    
+    # Option variables to be used later
+    filter_value = dpg.get_value(c.SIMILARITY_SELECT_TAG)
+    file_type = dpg.get_value(c.FILE_SELECT_TAG)
+    sample_number = dpg.get_value(c.SAMPLE_TAG)
+    overflow = dpg.get_value(c.OVERFLOW_SELECT_TAG)  # Has yet to be implemented
+    text = user_inputs[: num_inputs]
+
+    # Delete the option window, as it is no longer needed
     dpg.delete_item(c.OPTION_WINDOW_TAG)
 
+    # Scraping
     async with async_playwright() as playwright:
         browser = await playwright.chromium.launch(channel=c.BROWSER, headless=c.HEADLESS)
         page = await browser.new_page()
         await page.goto("https://quotes.toscrape.com")
-        print(page.url)
         nav = Navigator(page)
         parser = Parser()
         data = await nav.harvest_data(parser)
+    
+    bi_encoder = BiEncoder(text, filter_value)
+    new_list = []
+    for part in data:
+        if bi_encoder.evaluate_text(part[0]):
+            new_list.append(part[0])
+    
+    if sample_number < len(new_list):
+        cross_encoder = CrossEncoding(text)
+        c_list = cross_encoder.get_comparison_list(new_list)
+        idx_list = utils.get_max_indexes(c_list, sample_number)
+        final_list = []
+        for idx in idx_list:
+            final_list.append(new_list[idx])
+    else:
+        final_list = new_list
+    
+    dm = DataManager(final_list)
+    dm.save_data(file_type)
 
 
 if __name__ == "__main__":
@@ -157,7 +177,7 @@ if __name__ == "__main__":
 
         # File Selection
         dpg.add_text("Select which file type you wish to save your data in", tag=c.FILE_TEXT_TAG)
-        dpg.add_radio_button(label="File Type", items=["CSV", "Parquet", "JSONL", "SQLite"], default_value="CSV", tag=c.FILE_SELECT_TAG, callback=change_save_file)
+        dpg.add_radio_button(label="File Type", items=["CSV", "Parquet", "JSONL", "SQLite"], default_value="CSV", tag=c.FILE_SELECT_TAG)
 
         dpg.add_text("Click the button below to submit and start the data collection process")
         dpg.add_button(label="Submit", tag=c.SUBMIT_TAG, callback=start)

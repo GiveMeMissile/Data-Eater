@@ -7,7 +7,7 @@ class BiEncoder:
     # A Quick method to see if two sentences are similar or not.
     # Will be used to quickly filter out unrelated text from the rest of the relevant data. 
 
-    def __init__(self, texts):
+    def __init__(self, texts, filter_value):
         try:
             self.model = SentenceTransformer(c.BI_ENCODER_MODEL)
         except Exception:
@@ -15,6 +15,7 @@ class BiEncoder:
             self.model = SentenceTransformer(c.BACKUP_CROSS_ENCODER_MODEL)
         self.pythagorean = lambda x: math.sqrt(sum([x[i]**2 for i in range(len(x))]))
         self.text_vectors = self.model.encode(texts)
+        self.filter = filter_value
 
     def cosine_similarity(self, v1, v2):
         # Calculates the cosine similarity between two vectors of the same length
@@ -43,5 +44,15 @@ class BiEncoder:
         t2_vector = self.model.encode(t2)
 
         return self.cosine_similarity(t1_vector, t2_vector)
+    
+    def evaluate_text(self, text):
+        # Determines if the text should be included in the overflowed dataset, returns True of False.
+        # Note: The method to which the text is judged with multiple samples is likely to change.
+
+        similarity = self.compare(text)
+        similarity = sum(similarity)/len(similarity)
+        if similarity > self.filter:
+            return True
+        return False
     
     

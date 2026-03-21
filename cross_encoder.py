@@ -28,3 +28,11 @@ class CrossEncoding:
     def direct_compare(self, t1, t2):
         # Directly compares two inputted texts
         return self.model.predict((t1, t2))
+    
+    def get_comparison_list(self, texts):
+        c_list = []
+        for text in texts:
+            c = self.compare(text)
+            c_list.append(sum(c)/len(c))
+        
+        return c_list
