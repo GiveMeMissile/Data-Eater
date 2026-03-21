@@ -129,16 +129,16 @@ async def start(sender, app_data):
         parser = Parser()
         data = await nav.harvest_data(parser)
     
-    bi_encoder = BiEncoder(text, filter_value)
+    bi_encoder = await asyncio.to_thread(BiEncoder, text, filter_value) # BiEncoder(text, filter_value)
     new_list = []
     for part in data:
-        if bi_encoder.evaluate_text(part[0]):
+        if await asyncio.to_thread(bi_encoder.evaluate_text, part[0]):
             new_list.append(part[0])
     
     if sample_number < len(new_list):
-        cross_encoder = CrossEncoding(text)
-        c_list = cross_encoder.get_comparison_list(new_list)
-        idx_list = utils.get_max_indexes(c_list, sample_number)
+        cross_encoder = await asyncio.to_thread(CrossEncoding, text)
+        c_list = await asyncio.to_thread(cross_encoder.get_comparison_list, new_list)
+        idx_list = await asyncio.to_thread(utils.get_max_indexes, c_list, sample_number) # utils.get_max_indexes(c_list, sample_number)
         final_list = []
         for idx in idx_list:
             final_list.append(new_list[idx])
@@ -146,7 +146,7 @@ async def start(sender, app_data):
         final_list = new_list
     
     dm = DataManager(final_list)
-    dm.save_data(file_type)
+    await asyncio.to_thread(dm.save_data, file_type) # dm.save_data(file_type)
 
 
 if __name__ == "__main__":
@@ -156,6 +156,7 @@ if __name__ == "__main__":
 
     with dpg.window(label="Display", width=800, height=600, tag=c.DISPLAY_WINDOW_TAG):
         dpg.add_text("Display")
+        dpg.add_button(label="Test")
 
     with dpg.window(label="Select", width=800, height=600, tag=c.OPTION_WINDOW_TAG):
 
