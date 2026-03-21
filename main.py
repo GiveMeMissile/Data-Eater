@@ -1,10 +1,10 @@
 from dearpygui import dearpygui as dpg
 from playwright.async_api import async_playwright
 from dearpygui_async import DearPyGuiAsync
-from navigator import Navigator
-from parser import Parser
-from bi_encoder import BiEncoder
-from cross_encoder import CrossEncoding
+from Scraper.navigator import Navigator
+from Scraper.parser import Parser
+from Filters.bi_encoder import BiEncoder
+from Filters.cross_encoder import CrossEncoding
 from data_manager import DataManager
 import constants as c
 import asyncio
@@ -12,7 +12,7 @@ import utils
 
 num_inputs = c.DEFAULT_INPUT
 input_name = c.FILTER_OPTION_2
-user_inputs = ["When life is hard, you must be harder", "", "", "", "", "", "", "", "", ""]
+user_inputs = ["", "", "", "", "", "", "", "", "", ""]
 started = False
 
 dpg_async = DearPyGuiAsync()

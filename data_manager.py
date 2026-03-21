@@ -3,7 +3,7 @@ import pandas as pd
 import constants as c
 
 class DataManager:
-    def __init__(self, data, name="Placeholder_1"):
+    def __init__(self, data, name="Placeholder_2"):
         data_dict = {"Data": data}
         self.data = pd.DataFrame(data_dict)
         self.name = name
