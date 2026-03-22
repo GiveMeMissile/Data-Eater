@@ -168,6 +168,7 @@ async def start(sender, app_data):
     
     dm = DataManager(final_list)
     await asyncio.to_thread(dm.save_data, file_type) # dm.save_data(file_type)
+    dpg.add_text("Data Has been Saved!!!", parent=c.DISPLAY_WINDOW_TAG)
 
 
 if __name__ == "__main__":
