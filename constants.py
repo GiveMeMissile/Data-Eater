@@ -41,6 +41,7 @@ SIMILARITY_SELECT_TAG = "similarity"
 OVERFLOW_SELECT_TAG = "overflow"
 SUBMIT_TAG = "submit"
 FAILED_TAG = "fail_text"
+WORD_FILTER_OPTION = "word_filter_option"
 
 # Display Tags:
 DISPLAY_WINDOW_TAG = "display"

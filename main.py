@@ -33,13 +33,32 @@ def delete_previous_input():
     dpg.delete_item(input_name)
     for i in range(num_inputs):
         dpg.delete_item(input_name + "_" + str(i))
+        if dpg.does_item_exist(c.WORD_FILTER_OPTION + "_" + str(i)):
+            dpg.delete_item(c.WORD_FILTER_OPTION + "_" + str(i))
     if dpg.does_item_exist(c.SIMILARITY_TEXT_TAG):
         dpg.delete_item(c.SIMILARITY_TEXT_TAG)
     if dpg.does_item_exist(c.SIMILARITY_SELECT_TAG):
         dpg.delete_item(c.SIMILARITY_SELECT_TAG)
 
 
+def set_up_word(idx):
+    if not input_name == "Word":
+        return
+    
+    dpg.add_radio_button(
+        label="Filter Option", 
+        tag=c.WORD_FILTER_OPTION + "_" + str(idx),
+        items=["And", "Or"],
+        default_value="Or",
+        parent=c.OPTION_WINDOW_TAG,
+        before=c.SAMPLE_TEXT_TAG,
+        horizontal=True
+    )
+
+
 def set_up_input():
+    # Sets up the user input for filtering text either through Words or Samples
+
     dpg.add_input_int(
         label="Number of " + input_name + "s you wish to use", 
         tag=input_name, 
@@ -62,6 +81,8 @@ def set_up_input():
             default_value=user_inputs[i],
             before=c.SAMPLE_TEXT_TAG
         )
+        set_up_word(i)
+
     
     if input_name == "Sample":
         dpg.add_text(
