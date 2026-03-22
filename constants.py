@@ -52,6 +52,8 @@ CROSS_ENCODER_MODEL = config["cross_encoder_model_name"]
 BACKUP_BI_ENCODER_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 BACKUP_CROSS_ENCODER_MODEL = "cross-encoder/stsb-roberta-base"
 
+# Scraper
 BROWSER = config["scraper"]["browser"]
 HEADLESS = config["scraper"]["headless"]
 BATCH_SIZE = config["scraper"]["data_batch_size"]
+REQUEST_LIMIT = config["scraper"]["request_limit"]
