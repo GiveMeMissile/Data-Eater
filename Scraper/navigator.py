@@ -5,9 +5,9 @@ import time
 ############################
 # Functions to be added:
 # 1: Add Request Limit ✓
-# 2: Scrolling Function 
+# 2: Scrolling Function ✓
 # 3: Get All Buttons On a screen (parser?)
-# 4: Get All links On a screen
+# 4: Get All links On a screen (parser?)
 # 5: Determine if a page has data to be harvested.
 # 6: 
 
@@ -17,7 +17,8 @@ class Navigator:
     def __init__(self, page):
         self.page = page
         self.locations = []
-        self.locations.append(self.page.url)
+        if self.page.url != "about:blank":
+            self.locations.append(self.page.url)
         self.page.on("request", self.update_request_time)
         self.window_start = time.time()
         self.num_requests = 0
@@ -56,13 +57,44 @@ class Navigator:
     
     async def goto(self, url):
         # Goes to a new url, saving the url to the locations list
-
         await self.page.goto(url)
         self.locations.append(url)
 
+    async def mouse_scroll(self, length):
+        # Uses the mouse from playwright in order to scroll down a page length pixels
+        move_len = length // c.NUM_MOUSE_SCROLLS
+        for _ in range(c.NUM_MOUSE_SCROLLS):
+            await self.page.mouse.wheel(0, move_len)
+            await asyncio.sleep(0.1)
+
+    async def instant_scroll(self):
+        # Instantly scrolls down to the bottom of a page.
+        await self.page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+
+    async def infinite_scroll(self, max_scrolls=None):
+        # Scrolls an infinite scrolling page until it reaches the bottom or max scrolls is reached.
+        # Note: This function has yet to be tested due to a lack of any site to test yet.
+        # It will be tested on a later date (whenever I feel like it)
+
+        old_height = await self.page.evaluate("document.body.scrollHeight")
+        new_height = old_height
+        scroll_length = await self.page.evaluate("window.innerHeight")
+        num_scrolls = 0
+        while True:
+            await self.mouse_scroll(scroll_length * 2)
+            num_scrolls += 1
+            await asyncio.sleep(2)
+            new_height = await self.page.evaluate("document.body.scrollHeight")
+            if new_height ==  old_height:
+                break
+            if max_scrolls is not None:
+                if max_scrolls < num_scrolls:
+                    break
+
+            
+
     async def return_to_idx(self, idx):
         # Returns the page to a preivious url based off of its location in the locations list
-
         await self.page.goto(self.locations[idx])
 
     async def harvest_data(self, parser):

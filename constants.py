@@ -57,3 +57,5 @@ BROWSER = config["scraper"]["browser"]
 HEADLESS = config["scraper"]["headless"]
 BATCH_SIZE = config["scraper"]["data_batch_size"]
 REQUEST_LIMIT = config["scraper"]["request_limit"]
+
+NUM_MOUSE_SCROLLS = 5
