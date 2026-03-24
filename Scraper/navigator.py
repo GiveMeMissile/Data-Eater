@@ -6,10 +6,8 @@ import time
 # Functions to be added:
 # 1: Add Request Limit ✓
 # 2: Scrolling Function ✓
-# 3: Get All Buttons On a screen (parser?) 
-# 4: Get All links On a screen (parser?) 
-# 5: Determine if a page has data to be harvested. 
-# 6: 
+# 3: Get All Buttons On a screen ✓
+# 4: Get All links On a screen ✓
 
 class Navigator:
     # Class which uses Playwright in order to navigate the internet and get html data to be used by the parser
@@ -78,18 +76,27 @@ class Navigator:
 
         old_height = await self.page.evaluate("document.body.scrollHeight")
         new_height = old_height
-        scroll_length = await self.page.evaluate("window.innerHeight")
+        scroll_length = await self.page.evaluate("window.innerHeight") * 2
         num_scrolls = 0
+        no_count = 0
+
+        # Scrolls the entire height of the webpage once so content is ensured to load.
+        await self.mouse_scroll(old_height)
+        await asyncio.sleep(1)
+
         while True:
             await self.mouse_scroll(scroll_length * 2)
             num_scrolls += 1
-            await asyncio.sleep(2)
+            await asyncio.sleep(1)
             new_height = await self.page.evaluate("document.body.scrollHeight")
             if new_height ==  old_height:
-                break
+                no_count += 1
+                if no_count >= 2:
+                    break
             if max_scrolls is not None:
                 if max_scrolls < num_scrolls:
                     break
+            old_height = new_height
 
     async def return_to_idx(self, idx):
         # Returns the page to a preivious url based off of its location in the locations list
