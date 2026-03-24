@@ -6,9 +6,9 @@ import time
 # Functions to be added:
 # 1: Add Request Limit ✓
 # 2: Scrolling Function ✓
-# 3: Get All Buttons On a screen (parser?)
-# 4: Get All links On a screen (parser?)
-# 5: Determine if a page has data to be harvested.
+# 3: Get All Buttons On a screen (parser?) 
+# 4: Get All links On a screen (parser?) 
+# 5: Determine if a page has data to be harvested. 
 # 6: 
 
 class Navigator:
@@ -91,11 +91,39 @@ class Navigator:
                 if max_scrolls < num_scrolls:
                     break
 
-            
-
     async def return_to_idx(self, idx):
         # Returns the page to a preivious url based off of its location in the locations list
         await self.page.goto(self.locations[idx])
+
+    async def get_all_buttons(self):
+        # Returns a list of all the buttons contained within the page.
+        buttons = await self.page.get_by_role("button").all()
+        return buttons
+
+    async def get_all_links(self):
+        # Returns a list of all the links contained within the page.
+        links = await self.page.get_by_role("link").all()
+        return links
+    
+    async def click_all(self, button=True):
+        # Clicks on all of the buttons or links and checks for the changes in the website.
+        previous_page = self.locations[len(self.locations) - 1]
+        if button:
+            clickables = await self.get_all_buttons()
+        else:
+            clickables = await self.get_all_links()
+
+        for clickable in clickables:
+            await clickable.click()
+            await asyncio.sleep(.25)
+            print("Button Clicked")
+            # Insert function which checks smth (will be added later once the parser is ready)
+            if self.page.url != previous_page:
+                await asyncio.sleep(.25)
+                self.locations.append(self.page.url)
+                await self.goto(previous_page)
+
+
 
     async def harvest_data(self, parser):
         # This Function will be altered in order to work for multiple websites
