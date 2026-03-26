@@ -1,3 +1,4 @@
+from parser import Judge
 import constants as c
 import asyncio
 import time
@@ -13,6 +14,8 @@ class Navigator:
     # Class which uses Playwright in order to navigate the internet and get html data to be used by the parser
 
     def __init__(self, page):
+
+        self.judge = Judge()
         self.page = page
         self.locations = []
         if self.page.url != "about:blank":
