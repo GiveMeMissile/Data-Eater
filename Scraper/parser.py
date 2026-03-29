@@ -11,16 +11,29 @@ import constants as c
 class Parser:
     # Class which contain tools which will parse messy HTML into organized data.
     num_text_samples = 0
-    
 
-    def __init__(self):
-        pass
+    def __init__(self, min_length=100):
+        self.min_length = min_length
 
     def get_raw_text(self, html):
         soup = BeautifulSoup(html, "lxml")
         return soup.text
     
+    def get_text_samples(self, html):
+        # Function will be improved upon later.
+
+        text = self.get_raw_text(html)
+        text = text.split("\n")
+        samples = []
+        for part in text:
+            if len(part) >= self.min_length and not "{\\" in part:
+                samples.append(part)
+
+        return samples
+    
     def parse_through_quotes(self, html, url):
+        # Test function which will be used later. 
+
         soup = BeautifulSoup(html, "lxml")
         quotes_html = soup.find_all("div", class_="quote")
         quotes = []
@@ -92,4 +105,14 @@ class Judge(Parser):
         ratio -= c.TEXT_LOSS_THRESHOLD
 
         return ratio * 2
+    
+    def is_valid(self, url, html):
+        # Determines if the website is worth scraping (work in progress/needs improvements)
+
+        score = 0
+        score += self.check_url(url)
+        score += self.check_text_ratio(html)
+        if score >= 0:
+            return True
+        return False
 

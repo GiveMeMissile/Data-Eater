@@ -1,4 +1,4 @@
-from parser import Judge
+from Scraper.parser import Judge
 import constants as c
 import asyncio
 import time
