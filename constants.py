@@ -29,8 +29,7 @@ DEFAULT_OVERFLOW = config["gui"]["default_overflow"]
 # Option Tags: 
 OPTION_WINDOW_TAG = "select"
 FILTER_SELECT_TAG = "filter"
-FILTER_OPTION_1 = "Word"
-FILTER_OPTION_2 = "Sample"
+SAMPLE_FILTER = "Sample"
 FILTER_TEXT_TAG = "input_text"
 SAMPLE_TAG = "sample_num"
 SAMPLE_TEXT_TAG = "sample_num_text"

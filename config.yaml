@@ -7,7 +7,7 @@ gui:
   max_bi_encoding: 0.75
   default_bi_encoding: 0.25
   max_input_box: 10
-  min_input_box: 1
+  min_input_box: 0
   default_input_box: 1
   overflow_min: 1
   overflow_max: 10

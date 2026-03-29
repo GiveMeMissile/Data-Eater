@@ -11,57 +11,32 @@ import asyncio
 import utils
 
 num_inputs = c.DEFAULT_INPUT
-input_name = c.FILTER_OPTION_2
 user_inputs = ["", "", "", "", "", "", "", "", "", ""]
 started = False
 
 dpg_async = DearPyGuiAsync()
 
 def save_input(selector, app_data):
-    idx = int(selector.replace(input_name + "_", ""))
+    idx = int(selector.replace(c.SAMPLE_FILTER + "_", ""))
     user_inputs[idx] = app_data
 
 
-def input_option(selector, app_data):
-    global input_name
-    delete_previous_input()
-    input_name = app_data
-    set_up_input()
-
-
 def delete_previous_input():
-    dpg.delete_item(input_name)
+    dpg.delete_item(c.SAMPLE_FILTER)
     for i in range(num_inputs):
-        dpg.delete_item(input_name + "_" + str(i))
-        if dpg.does_item_exist(c.WORD_FILTER_OPTION + "_" + str(i)):
-            dpg.delete_item(c.WORD_FILTER_OPTION + "_" + str(i))
+        dpg.delete_item(c.SAMPLE_FILTER + "_" + str(i))
     if dpg.does_item_exist(c.SIMILARITY_TEXT_TAG):
         dpg.delete_item(c.SIMILARITY_TEXT_TAG)
     if dpg.does_item_exist(c.SIMILARITY_SELECT_TAG):
         dpg.delete_item(c.SIMILARITY_SELECT_TAG)
 
 
-def set_up_word(idx):
-    if not input_name == "Word":
-        return
-    
-    dpg.add_radio_button(
-        label="Filter Option", 
-        tag=c.WORD_FILTER_OPTION + "_" + str(idx),
-        items=["And", "Or"],
-        default_value="Or",
-        parent=c.OPTION_WINDOW_TAG,
-        before=c.SAMPLE_TEXT_TAG,
-        horizontal=True
-    )
-
-
 def set_up_input():
-    # Sets up the user input for filtering text either through Words or Samples
+    # Sets up the user input for filtering text for samples
 
     dpg.add_input_int(
-        label="Number of " + input_name + "s you wish to use", 
-        tag=input_name, 
+        label="Number of samples you wish to use", 
+        tag=c.SAMPLE_FILTER, 
         default_value=num_inputs, 
         min_value=c.MIN_INPUT, 
         max_value=c.MAX_INPUT, 
@@ -74,48 +49,42 @@ def set_up_input():
 
     for i in range(num_inputs):
         dpg.add_input_text(
-            label=input_name + " Input", 
-            tag=input_name + "_" + str(i), 
+            label="sample Input", 
+            tag=c.SAMPLE_FILTER + "_" + str(i), 
             parent=c.OPTION_WINDOW_TAG,
             callback=save_input,
             default_value=user_inputs[i],
             before=c.SAMPLE_TEXT_TAG
         )
-        set_up_word(i)
 
-    
-    if input_name == "Sample":
-        dpg.add_text(
-            "Input the minimum similarity between your sample and a different text in order for that text to be included in the sample",
-            tag=c.SIMILARITY_TEXT_TAG,
-            parent=c.OPTION_WINDOW_TAG,
-            before=c.FILE_TEXT_TAG
-        )
-        dpg.add_slider_float(
-            label="Similarity",
-            tag=c.SIMILARITY_SELECT_TAG,
-            parent=c.OPTION_WINDOW_TAG,
-            default_value=c.DEFAULT_BI,
-            before=c.FILE_TEXT_TAG,
-            min_value=c.MIN_BI,
-            max_value=c.MAX_BI
-        )
+    dpg.add_text(
+        "Input the minimum similarity between your sample and a different text in order for that text to be included in the sample",
+        tag=c.SIMILARITY_TEXT_TAG,
+        parent=c.OPTION_WINDOW_TAG,
+        before=c.FILE_TEXT_TAG
+    )
+    dpg.add_slider_float(
+        label="Similarity",
+        tag=c.SIMILARITY_SELECT_TAG,
+        parent=c.OPTION_WINDOW_TAG,
+        default_value=c.DEFAULT_BI,
+        before=c.FILE_TEXT_TAG,
+        min_value=c.MIN_BI,
+        max_value=c.MAX_BI
+    )
 
-
-def update_inputs(selector, app_data):
-    # Updates the inputs when the input value is changed
-
+def update_inputs(sender, appdata):
+    # Recreated the input screen everytime the thing is updates
     global num_inputs
     delete_previous_input()
-    num_inputs = app_data
+    num_inputs = appdata
     set_up_input()
-
 
 async def can_start():
     # Checks if the start function is allowed to start
 
     for i in range(num_inputs):
-        if dpg.get_value(input_name + "_" + str(i)) == "":
+        if dpg.get_value(c.SAMPLE_FILTER + "_" + str(i)) == "":
             return False
     return True
 
@@ -150,7 +119,7 @@ async def start(sender, app_data):
         parser = Parser()
         data = await nav.harvest_data(parser)
     
-    bi_encoder = await asyncio.to_thread(BiEncoder, text, filter_value) # BiEncoder(text, filter_value)
+    bi_encoder = await asyncio.to_thread(BiEncoder, text, filter_value) 
     new_list = []
     for part in data:
         if await asyncio.to_thread(bi_encoder.evaluate_text, part[0]):
@@ -159,7 +128,7 @@ async def start(sender, app_data):
     if sample_number < len(new_list):
         cross_encoder = await asyncio.to_thread(CrossEncoding, text)
         c_list = await asyncio.to_thread(cross_encoder.get_comparison_list, new_list)
-        idx_list = await asyncio.to_thread(utils.get_max_indexes, c_list, sample_number) # utils.get_max_indexes(c_list, sample_number)
+        idx_list = await asyncio.to_thread(utils.get_max_indexes, c_list, sample_number) 
         final_list = []
         for idx in idx_list:
             final_list.append(new_list[idx])
@@ -184,8 +153,6 @@ if __name__ == "__main__":
 
         # Filter Selection
         dpg.add_text("Select options for scraping")
-        dpg.add_text("Select which filter is going to be used")
-        dpg.add_radio_button(label="Filter", items=[c.FILTER_OPTION_1, c.FILTER_OPTION_2], tag=c.FILTER_SELECT_TAG, default_value=input_name, callback=input_option)
 
         # Filter input
         dpg.add_text("Below type in each value you want to filter your dataset with", tag=c.FILTER_TEXT_TAG)
