@@ -23,6 +23,7 @@ DEFAULT_INPUT = config["gui"]["default_input_box"]
 MIN_OVERFLOW = config["gui"]["overflow_min"]
 MAX_OVERFLOW = config["gui"]["overflow_max"]
 DEFAULT_OVERFLOW = config["gui"]["default_overflow"]
+DEFAULT_WORD_TEXT = config["gui"]["default_word_input"]
 
 # GUI Tags:
 
@@ -31,6 +32,8 @@ OPTION_WINDOW_TAG = "select"
 FILTER_SELECT_TAG = "filter"
 SAMPLE_FILTER = "Sample"
 FILTER_TEXT_TAG = "input_text"
+WORD_FILTER = "word_filter"
+WORD_FILTER_TEXT = "word_filter_text"
 SAMPLE_TAG = "sample_num"
 SAMPLE_TEXT_TAG = "sample_num_text"
 FILE_TEXT_TAG = "file_text"
@@ -40,7 +43,6 @@ SIMILARITY_SELECT_TAG = "similarity"
 OVERFLOW_SELECT_TAG = "overflow"
 SUBMIT_TAG = "submit"
 FAILED_TAG = "fail_text"
-WORD_FILTER_OPTION = "word_filter_option"
 
 # Display Tags:
 DISPLAY_WINDOW_TAG = "display"

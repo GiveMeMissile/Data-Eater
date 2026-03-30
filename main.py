@@ -25,10 +25,6 @@ def delete_previous_input():
     dpg.delete_item(c.SAMPLE_FILTER)
     for i in range(num_inputs):
         dpg.delete_item(c.SAMPLE_FILTER + "_" + str(i))
-    if dpg.does_item_exist(c.SIMILARITY_TEXT_TAG):
-        dpg.delete_item(c.SIMILARITY_TEXT_TAG)
-    if dpg.does_item_exist(c.SIMILARITY_SELECT_TAG):
-        dpg.delete_item(c.SIMILARITY_SELECT_TAG)
 
 
 def set_up_input():
@@ -44,7 +40,7 @@ def set_up_input():
         max_clamped=True,
         parent=c.OPTION_WINDOW_TAG,
         callback=update_inputs,
-        before=c.SAMPLE_TEXT_TAG
+        before=c.WORD_FILTER_TEXT
     )
 
     for i in range(num_inputs):
@@ -54,24 +50,9 @@ def set_up_input():
             parent=c.OPTION_WINDOW_TAG,
             callback=save_input,
             default_value=user_inputs[i],
-            before=c.SAMPLE_TEXT_TAG
+            before=c.WORD_FILTER_TEXT
         )
 
-    dpg.add_text(
-        "Input the minimum similarity between your sample and a different text in order for that text to be included in the sample",
-        tag=c.SIMILARITY_TEXT_TAG,
-        parent=c.OPTION_WINDOW_TAG,
-        before=c.FILE_TEXT_TAG
-    )
-    dpg.add_slider_float(
-        label="Similarity",
-        tag=c.SIMILARITY_SELECT_TAG,
-        parent=c.OPTION_WINDOW_TAG,
-        default_value=c.DEFAULT_BI,
-        before=c.FILE_TEXT_TAG,
-        min_value=c.MIN_BI,
-        max_value=c.MAX_BI
-    )
 
 def update_inputs(sender, appdata):
     # Recreated the input screen everytime the thing is updates
@@ -143,7 +124,7 @@ async def start(sender, app_data):
 if __name__ == "__main__":
 
     dpg.create_context()
-    dpg.create_viewport(width=800, height=600)
+    dpg.create_viewport(title="Data Eater", width=800, height=600)
 
     with dpg.window(label="Display", width=800, height=600, tag=c.DISPLAY_WINDOW_TAG):
         dpg.add_text("Display")
@@ -157,6 +138,10 @@ if __name__ == "__main__":
         # Filter input
         dpg.add_text("Below type in each value you want to filter your dataset with", tag=c.FILTER_TEXT_TAG)
 
+        # Simple Word Filter
+        dpg.add_text("Below, type in the words you want to include or exclude, (type NONE if you wish to have no word filter)", tag=c.WORD_FILTER_TEXT)
+        dpg.add_input_text(label="Word Filter", tag=c.WORD_FILTER, default_value=c.DEFAULT_WORD_TEXT)
+
         # Dataset Sample
         dpg.add_text("Select the number of samples to be in the final dataset", tag=c.SAMPLE_TEXT_TAG)
         dpg.add_input_int(label="Sample Number", step=c.NUM_SAMPLE_STEPS, tag=c.SAMPLE_TAG, min_value=c.MIN_SAMPLE, min_clamped=True, default_value=c.DEFAULT_SAMPLE)
@@ -164,6 +149,10 @@ if __name__ == "__main__":
         # Dataset Overflow
         dpg.add_text("Select the amount of overflow samples")
         dpg.add_input_int(label="Overflow", tag=c.OVERFLOW_SELECT_TAG, min_value=c.MIN_OVERFLOW, min_clamped=True, max_value=c.MAX_OVERFLOW, max_clamped=True, default_value=c.DEFAULT_OVERFLOW)
+
+        # Similarity to Samples
+        dpg.add_text("Input the minimum similarity between your sample and a different text in order for that text to be included in the sample",tag=c.SIMILARITY_TEXT_TAG)
+        dpg.add_slider_float(label="Similarity", tag=c.SIMILARITY_SELECT_TAG, default_value=c.DEFAULT_BI, min_value=c.MIN_BI, max_value=c.MAX_BI)
 
         # File Selection
         dpg.add_text("Select which file type you wish to save your data in", tag=c.FILE_TEXT_TAG)

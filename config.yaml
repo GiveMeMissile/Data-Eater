@@ -12,6 +12,7 @@ gui:
   overflow_min: 1
   overflow_max: 10
   default_overflow: 3
+  default_word_input: "Ex: ((Word1 AND Word2) OR (Word3 AND Word4)) AND NOT Word5"
 
 # AI model selection
 bi_encoder_model_name: "sentence-transformers/all-MiniLM-L6-v2"
