@@ -6,7 +6,6 @@ import constants as c
 # 2: Get Text samples (Use Wikipedia, Hacker News, and Quotes to Scrape to test this)
 # 3: Filter out useless Text Data (Headers, Web Page Name, Info, ect...)
 # 4: Get Good
-# 
 
 class Parser:
     # Class which contain tools which will parse messy HTML into organized data.

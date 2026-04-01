@@ -29,4 +29,4 @@ scraper:
   browser: "msedge"
   headless: true
   data_batch_size: 1000 # Test value, don't use this value for actual data scraping pls...
-  request_limit: 600 # Number of requests made per minute, avoids rate limits and is just nice for the website
+  request_limit: 6 # Number of requests made per minute, avoids rate limits and is just nice for the website
