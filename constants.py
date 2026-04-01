@@ -24,6 +24,12 @@ MIN_OVERFLOW = config["gui"]["overflow_min"]
 MAX_OVERFLOW = config["gui"]["overflow_max"]
 DEFAULT_OVERFLOW = config["gui"]["default_overflow"]
 DEFAULT_WORD_TEXT = config["gui"]["default_word_input"]
+MIN_WEBSITES = config["gui"]["min_websites"]
+MAX_WEBSITES = config["gui"]["max_websites"]
+DEFAULT_WEBSITES = config["gui"]["num_default_websites"]
+DEFAULT_WEBSITE_1 = config["gui"]["default_websites"][0]
+DEFAULT_WEBSITE_2 = config["gui"]["default_websites"][1]
+DEFAULT_WEBSITE_3 = config["gui"]["default_websites"][2]
 
 # GUI Tags:
 
@@ -42,7 +48,11 @@ SIMILARITY_TEXT_TAG = "similarity_text"
 SIMILARITY_SELECT_TAG = "similarity"
 OVERFLOW_SELECT_TAG = "overflow"
 SUBMIT_TAG = "submit"
+SUBMIT_TEXT_TAG = "submit_text"
 FAILED_TAG = "fail_text"
+NUM_WEBSITE_TAG = "number_websites"
+WEBSITE_INPUT_TAG = "websites"
+FILE_NAME_TAG = "file_name"
 
 # Display Tags:
 DISPLAY_WINDOW_TAG = "display"

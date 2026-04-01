@@ -11,7 +11,9 @@ import asyncio
 import utils
 
 num_inputs = c.DEFAULT_INPUT
+num_websites = c.DEFAULT_WEBSITES
 user_inputs = ["", "", "", "", "", "", "", "", "", ""]
+websites = [c.DEFAULT_WEBSITE_1, c.DEFAULT_WEBSITE_2, c.DEFAULT_WEBSITE_3, "", "", "", "", "", "", ""]
 started = False
 
 dpg_async = DearPyGuiAsync()
@@ -25,6 +27,37 @@ def delete_previous_input():
     dpg.delete_item(c.SAMPLE_FILTER)
     for i in range(num_inputs):
         dpg.delete_item(c.SAMPLE_FILTER + "_" + str(i))
+
+
+def update_websites(sender, appdata):
+    global num_websites
+    save_websites()
+    destroy_website_inputs()
+    num_websites = appdata
+    create_website_input()
+
+
+def save_websites():
+    for i in range(num_websites):
+        website = dpg.get_value(c.WEBSITE_INPUT_TAG + "_" + str(i))
+        websites[i] = website
+
+
+def destroy_website_inputs():
+    for i in range(num_websites):
+        if dpg.does_item_exist(c.WEBSITE_INPUT_TAG + "_" + str(i)):
+            dpg.delete_item(c.WEBSITE_INPUT_TAG + "_" + str(i))
+
+
+def create_website_input():
+    for i in range(num_websites):
+        dpg.add_input_text(
+            label="Website",
+            tag=c.WEBSITE_INPUT_TAG + "_" + str(i),
+            default_value=websites[i],
+            parent=c.OPTION_WINDOW_TAG,
+            before=c.SUBMIT_TEXT_TAG
+        )
 
 
 def set_up_input():
@@ -60,6 +93,7 @@ def update_inputs(sender, appdata):
     delete_previous_input()
     num_inputs = appdata
     set_up_input()
+
 
 async def can_start():
     # Checks if the start function is allowed to start
@@ -158,11 +192,30 @@ if __name__ == "__main__":
         dpg.add_text("Select which file type you wish to save your data in", tag=c.FILE_TEXT_TAG)
         dpg.add_radio_button(label="File Type", items=["CSV", "Parquet", "JSONL", "SQLite"], default_value="CSV", tag=c.FILE_SELECT_TAG)
 
-        dpg.add_text("Click the button below to submit and start the data collection process")
+        # File Name
+        dpg.add_text("Select what you wish to name the file in which the scraped data is saved")
+        dpg.add_input_text(label="Data File Name", tag=c.FILE_NAME_TAG)
+
+        # Website Selection
+        dpg.add_text("Select which websites you which to scrape, or use these here default websites")
+        dpg.add_input_int(
+            label="Number of Websites", 
+            tag=c.NUM_WEBSITE_TAG, 
+            min_clamped=True, 
+            min_value=c.MIN_WEBSITES, 
+            max_clamped=True, 
+            max_value=c.MAX_WEBSITES, 
+            default_value=c.DEFAULT_WEBSITES,
+            callback=update_websites
+        )
+
+        # Set up submit button (hard af)
+        dpg.add_text("Click the button below to submit and start the data collection process", tag=c.SUBMIT_TEXT_TAG)
         dpg.add_button(label="Submit", tag=c.SUBMIT_TAG, callback=start)
 
         # Set up Filter Inputs
         set_up_input()
+        create_website_input()
 
 
     dpg.setup_dearpygui()

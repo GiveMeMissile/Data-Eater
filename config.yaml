@@ -13,6 +13,13 @@ gui:
   overflow_max: 10
   default_overflow: 3
   default_word_input: "Ex: ((Word1 AND Word2) OR (Word3 AND Word4)) AND NOT Word5"
+  max_websites: 10
+  min_websites: 1
+  num_default_websites: 3
+  default_websites:
+    - "https://en.wikipedia.org/wiki/Backpropagation"
+    - "https://quotes.toscrape.com/"
+    - "https://infinite-scroll.com/demo/full-page/"
 
 # AI model selection
 bi_encoder_model_name: "sentence-transformers/all-MiniLM-L6-v2"
