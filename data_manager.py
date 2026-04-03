@@ -3,7 +3,7 @@ import constants as c
 import sqlite3
 
 class DataManager:
-    def __init__(self, data, name="Placeholder_3"):
+    def __init__(self, data, name="None"):
         data_dict = {"Data": data}
         self.data = pd.DataFrame(data_dict)
         self.name = name

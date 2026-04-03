@@ -98,10 +98,21 @@ def update_inputs(sender, appdata):
 async def can_start():
     # Checks if the start function is allowed to start
 
+    can_start = True
+
     for i in range(num_inputs):
         if dpg.get_value(c.SAMPLE_FILTER + "_" + str(i)) == "":
-            return False
-    return True
+            can_start = False
+        
+    if dpg.get_value(c.FILE_NAME_TAG) == "" or " " in dpg.get_value(c.FILE_NAME_TAG):
+        can_start = False
+    return can_start
+
+
+async def display_failure():
+    if not dpg.does_item_exist(c.FAILED_TAG):
+        dpg.add_text("Cannot start as some options have not been filled out...", parent=c.OPTION_WINDOW_TAG, before=c.SUBMIT_TAG, tag=c.FAILED_TAG)
+    dpg.set_item_label(c.SUBMIT_TAG, "Submit - Failed")
 
 
 async def start(sender, app_data):
@@ -110,29 +121,36 @@ async def start(sender, app_data):
     # Check if the process can begin
     global started
     if not await can_start():
-        if not dpg.does_item_exist(c.FAILED_TAG):
-            dpg.add_text("Cannot start as some options have not been filled out...", parent=c.OPTION_WINDOW_TAG, before=c.SUBMIT_TAG, tag=c.FAILED_TAG)
-        dpg.set_item_label(c.SUBMIT_TAG, "Submit - Failed")
+        await display_failure()
         return
-    
+
+    dpg.hide_item(c.OPTION_WINDOW_TAG)
+
     # Option variables to be used later
+    save_websites()
     filter_value = dpg.get_value(c.SIMILARITY_SELECT_TAG)
     file_type = dpg.get_value(c.FILE_SELECT_TAG)
     sample_number = dpg.get_value(c.SAMPLE_TAG)
     overflow = dpg.get_value(c.OVERFLOW_SELECT_TAG)  # Has yet to be implemented
+    save_name = dpg.get_value(c.FILE_NAME_TAG)
     text = user_inputs[: num_inputs]
-
-    # Delete the option window, as it is no longer needed
-    dpg.delete_item(c.OPTION_WINDOW_TAG)
+    websites_to_scrape = websites[: num_websites]
 
     # Scraping
     async with async_playwright() as playwright:
         browser = await playwright.chromium.launch(channel=c.BROWSER, headless=c.HEADLESS)
-        page = await browser.new_page()
-        await page.goto("https://quotes.toscrape.com")
-        nav = Navigator(page)
-        parser = Parser()
-        data = await nav.harvest_data(parser)
+        for website in websites_to_scrape:
+            page = await browser.new_page()
+            nav = Navigator(page)
+            works = await nav.goto(website)
+            if not works:
+                await display_failure()
+                await browser.close()
+                dpg.show_item(c.OPTION_WINDOW_TAG)
+                return
+            print("Success!!!")
+        print("Total Success")
+        data = ["Temporary Data"]
     
     bi_encoder = await asyncio.to_thread(BiEncoder, text, filter_value) 
     new_list = []
@@ -149,22 +167,22 @@ async def start(sender, app_data):
             final_list.append(new_list[idx])
     else:
         final_list = new_list
-    
-    dm = DataManager(final_list)
-    await asyncio.to_thread(dm.save_data, file_type) # dm.save_data(file_type)
+
+    dm = DataManager(final_list, name=save_name)
+    # await asyncio.to_thread(dm.save_data, file_type)
     dpg.add_text("Data Has been Saved!!!", parent=c.DISPLAY_WINDOW_TAG)
 
 
 if __name__ == "__main__":
 
     dpg.create_context()
-    dpg.create_viewport(title="Data Eater", width=800, height=600)
+    dpg.create_viewport(title="Data Eater", width=800, height=700)
 
-    with dpg.window(label="Display", width=800, height=600, tag=c.DISPLAY_WINDOW_TAG):
+    with dpg.window(label="Display", width=800, height=700, tag=c.DISPLAY_WINDOW_TAG):
         dpg.add_text("Display")
         dpg.add_button(label="Test")
 
-    with dpg.window(label="Select", width=800, height=600, tag=c.OPTION_WINDOW_TAG):
+    with dpg.window(label="Select", width=800, height=700, tag=c.OPTION_WINDOW_TAG):
 
         # Filter Selection
         dpg.add_text("Select options for scraping")

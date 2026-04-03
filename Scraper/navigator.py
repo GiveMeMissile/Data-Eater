@@ -70,8 +70,12 @@ class Navigator:
     async def goto(self, url):
         # Goes to a new url, saving the url to the locations list
         w = await self.wait_for_delay()
-        await self.page.goto(url)
+        try: 
+            await self.page.goto(url)
+        except Exception as e:
+            return False
         self.locations.append(url)
+        return True
 
     async def mouse_scroll(self, length):
         # Uses the mouse from playwright in order to scroll down a page length pixels
