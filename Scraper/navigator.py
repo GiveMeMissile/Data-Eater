@@ -5,12 +5,12 @@ import time
 
 ##########################################################################
 # Defining what will be added:  
-# 1: Button Prioritization (based on name)
-# 2: Link Prioritization
-# 3: Location rework + update usage
-# 4: Check for Dead Ends
-# 5: Save Websites Scores (from Judge)
-# 6: Add Capabilities to handle search bars
+# 1: Button Prioritization (based on name) ✓
+# 2: Link Prioritization ✓
+# 3: Location rework + update usage ✓
+# 4: Check for Dead ✓
+# 5: Save Websites Scores (from Judge) ✓
+# 6: Add Capabilities to handle search bars 
 # 7: Add Abilities to return to the previous website with the best score
 
 class Navigator:
@@ -177,32 +177,75 @@ class Navigator:
 class Analyzer(Navigator):
     # This class is focused on getting information about the page
 
-    def __init__(self, page):
+    def __init__(self, page, words, samples):
         super().__init__(page)
-        judge = Judge()
-        scraping_score = []
-        exploraton_score = []
+        self.judge = Judge()
+        self.samples = []
+        for part in samples:
+            self.samples += part.split(" ")
+        self.words = words
+        self.scraping_score = []
+        self.exploraton_score = []
 
     async def get_all_buttons(self):
+        # Gets all links and counts the exploration score from links
+
+        score = 0
         buttons = await super().get_all_buttons()
         prioritized_list = []
         for button in buttons:
-            if any(priority in button.inner_text() for priority in c.MAX_PRIORITY):
+            name = await button.inner_text()
+            if any(priority in name for priority in (c.MAX_PRIORITY + self.words)):
                 prioritized_list.append(button)
+                score += 0.1
         
         for button in buttons:
-            if any(priority in button.inner_text() for priority in c.NORMAL_PRIORITY):
+            name = await button.inner_text()
+            if any(priority in name for priority in (c.NORMAL_PRIORITY + self.samples)):
                 prioritized_list.append(button)
+                score += 0.05
         
         for button in buttons:
             if any(button == b for b in prioritized_list):
                 continue
-            if not any(reject in button.inner_text() for reject in c.REJECT):
+            name = await button.inner_text()
+            if not any(reject in name for reject in c.REJECT):
                 prioritized_list.append(button)
+                score += 0.025
 
-        return prioritized_list
+        return prioritized_list, score
+    
+    async def get_all_links(self):
+        # Gets all links and counts the exploration score from links
+
+        score = 0
+        links = await super().get_all_links()
+        prioritized_list = []
+        for link in links:
+            text = await link.inner_text()
+            if any(priority in text for priority in (c.MAX_PRIORITY + self.words)):
+                prioritized_list.append(link)
+                score += 0.1
+        
+        for link in links:
+            text = await link.inner_text()
+            if any(priority in text for priority in (c.NORMAL_PRIORITY + self.samples)):
+                prioritized_list.append(link)
+                score += 0.05
+        
+        for link in links:
+            text = await link.inner_text()
+            if any(link == b for b in prioritized_list):
+                continue
+            if not any(reject in text for reject in c.REJECT):
+                prioritized_list.append(link)
+                score += 0.025
+
+        return prioritized_list, score
 
     async def check_infinite_scroll(self):
+        # Checks if a page is infinitely scrollable. 
+
         old_height = await self.page.evaluate("document.body.scrollHeight")
         await self.mouse_scroll(old_height)
         new_height = await self.page.evaluate("document.body.scrollHeight")
@@ -210,7 +253,27 @@ class Analyzer(Navigator):
         if new_height > old_height:
             return True
         return False
+    
+    async def goto(self, url):
+        # Go to a different page and saves its exploration and scraping score. 
 
+        exists = await super().goto(url)
+        if not exists:
+            return
+        await asyncio.sleep(0.1)
+        self.scraping_score.append(self.judge.get_score(url, await self.get_html()))
+        _, score_1 = await self.get_all_buttons()
+        _, score_2 = await self.get_all_links()
+        self.exploraton_score.append(score_1 + score_2)
+    
+    async def is_dead_end(self):
+        # Checks if a page has no links/buttons to use to navigate to other pages.
+
+        _, score_1 = await self.get_all_buttons()
+        _, score_2 = await self.get_all_links()
+        if score_1 + score_2 == 0:
+            return True
+        return False
 
 class Explorer(Analyzer):
     pass

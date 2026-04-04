@@ -105,6 +105,9 @@ class Judge(Parser):
 
         return ratio * 10
     
+    def get_score(self, url, html):
+        return self.check_url(url) + self.check_text_ratio(html)
+    
     def is_valid(self, url, html):
         # Determines if the website is worth scraping (work in progress/needs improvements)
 
