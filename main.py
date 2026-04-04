@@ -5,6 +5,7 @@ from Scraper.navigator import Navigator
 from Scraper.parser import Parser
 from Filters.bi_encoder import BiEncoder
 from Filters.cross_encoder import CrossEncoding
+from Filters.word_filter import WordFilter
 from data_manager import DataManager
 import constants as c
 import asyncio
@@ -106,6 +107,11 @@ async def can_start():
         
     if dpg.get_value(c.FILE_NAME_TAG) == "" or " " in dpg.get_value(c.FILE_NAME_TAG):
         can_start = False
+
+    w = WordFilter(dpg.get_value(c.WORD_FILTER))
+    if not dpg.get_value(c.WORD_FILTER).lower() == "none" and w.words is None:
+        can_start = False
+
     return can_start
 
 
@@ -133,6 +139,7 @@ async def start(sender, app_data):
     sample_number = dpg.get_value(c.SAMPLE_TAG)
     overflow = dpg.get_value(c.OVERFLOW_SELECT_TAG)  # Has yet to be implemented
     save_name = dpg.get_value(c.FILE_NAME_TAG)
+    words = dpg.get_value(c.WORD_FILTER)
     text = user_inputs[: num_inputs]
     websites_to_scrape = websites[: num_websites]
 
@@ -154,9 +161,19 @@ async def start(sender, app_data):
     
     bi_encoder = await asyncio.to_thread(BiEncoder, text, filter_value) 
     new_list = []
+
+    w = WordFilter(words)
+
+    word_list = []
+
     for part in data:
+        if await asyncio.to_thread(w.evaluate, w.words, part):
+            word_list.append(part)
+
+    for part in word_list:
         if await asyncio.to_thread(bi_encoder.evaluate_text, part[0]):
             new_list.append(part[0])
+    
     
     if sample_number < len(new_list):
         cross_encoder = await asyncio.to_thread(CrossEncoding, text)
