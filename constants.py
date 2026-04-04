@@ -72,5 +72,42 @@ REQUEST_LIMIT = config["scraper"]["request_limit"]
 NUM_MOUSE_SCROLLS = 5
 JUDGE_REJECT_SCORE = 0
 JUDGE_SCORE_CHANGE = 1
-TEXT_LOSS_THRESHOLD = 0.25
+TEXT_LOSS_THRESHOLD = 0.20
 LIMIT_WINDOW = 60
+
+# Scraper Keyword prioritize/filter
+MAX_PRIORITY = [
+    "article", "post", "read more", "read full",
+    "full story", "continue reading", "view post",
+    "open post", "expand", "show more",
+    "comments", "discussion", "replies", "thread",
+    "forum", "community", "responses",
+    "latest", "recent", "trending", "popular",
+    "top", "featured", "new", "explore",
+    "search results", "results", "filter",
+    "sort", "browse", "discover"
+]
+
+NORMAL_PRIORITY = [
+    "next", "previous", "next page", "older",
+    "newer", "load more", "show more", "view all",
+    "see all", "more posts", "all posts",
+    "category", "topic", "tag", "section",
+    "archive", "index", "all topics",
+    "profile", "posts", "activity", "feed",
+    "timeline", "history", "contributions"
+]
+
+REJECT = [
+    "login", "log in", "sign in", "sign up",
+    "register", "create account", "forgot password",
+    "reset password", "privacy", "terms", "cookie", 
+    "gdpr", "legal", "policy", "disclaimer",
+    "copyright", "buy", "purchase", "checkout", 
+    "cart", "subscribe", "upgrade", "pricing", "plan",
+    "payment", "billing", "close", "dismiss", "cancel", "back",
+    "exit", "skip", "deny", "reject", "help", "support", 
+    "faq", "contact", "report", "feedback", "advertise",
+    "share", "follow", "like", "bookmark",
+    "save", "download", "print"
+]

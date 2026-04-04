@@ -103,7 +103,7 @@ class Judge(Parser):
         ratio = text_length/html_length
         ratio -= c.TEXT_LOSS_THRESHOLD
 
-        return ratio * 2
+        return ratio * 10
     
     def is_valid(self, url, html):
         # Determines if the website is worth scraping (work in progress/needs improvements)

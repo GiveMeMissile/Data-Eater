@@ -3,19 +3,21 @@ import constants as c
 import asyncio
 import time
 
-############################
-# Functions to be added:
-# 1: Add Request Limit ✓
-# 2: Scrolling Function ✓
-# 3: Get All Buttons On a screen ✓
-# 4: Get All links On a screen ✓
+##########################################################################
+# Defining what will be added:  
+# 1: Button Prioritization (based on name)
+# 2: Link Prioritization
+# 3: Location rework + update usage
+# 4: Check for Dead Ends
+# 5: Save Websites Scores (from Judge)
+# 6: Add Capabilities to handle search bars
+# 7: Add Abilities to return to the previous website with the best score
 
 class Navigator:
     # Class which uses Playwright in order to navigate the internet and get html data to be used by the parser
 
     def __init__(self, page):
 
-        self.judge = Judge()
         self.page = page
         self.locations = []
         if self.page.url != "about:blank":
@@ -170,3 +172,45 @@ class Navigator:
             total_data += data
 
         return total_data
+
+
+class Analyzer(Navigator):
+    # This class is focused on getting information about the page
+
+    def __init__(self, page):
+        super().__init__(page)
+        judge = Judge()
+        scraping_score = []
+        exploraton_score = []
+
+    async def get_all_buttons(self):
+        buttons = await super().get_all_buttons()
+        prioritized_list = []
+        for button in buttons:
+            if any(priority in button.inner_text() for priority in c.MAX_PRIORITY):
+                prioritized_list.append(button)
+        
+        for button in buttons:
+            if any(priority in button.inner_text() for priority in c.NORMAL_PRIORITY):
+                prioritized_list.append(button)
+        
+        for button in buttons:
+            if any(button == b for b in prioritized_list):
+                continue
+            if not any(reject in button.inner_text() for reject in c.REJECT):
+                prioritized_list.append(button)
+
+        return prioritized_list
+
+    async def check_infinite_scroll(self):
+        old_height = await self.page.evaluate("document.body.scrollHeight")
+        await self.mouse_scroll(old_height)
+        new_height = await self.page.evaluate("document.body.scrollHeight")
+        await asyncio.sleep(0.5)
+        if new_height > old_height:
+            return True
+        return False
+
+
+class Explorer(Analyzer):
+    pass
