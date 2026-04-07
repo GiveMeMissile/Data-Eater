@@ -30,3 +30,4 @@ scraper:
   headless: true
   data_batch_size: 1000 # Test value, don't use this value for actual data scraping pls...
   request_limit: 600 # Number of requests made per minute, avoids rate limits and is just nice for the website
+  max_scrolls: 30 # The max number of scrolls when handling infinite scroll websites, set to -1 for no limit

@@ -19,9 +19,9 @@ class Navigator:
     def __init__(self, page):
 
         self.page = page
-        self.locations = []
+        self.pages = {"Page": []}
         if self.page.url != "about:blank":
-            self.locations.append(self.page.url)
+            self.pages["Page"].append(self.page.url)
         self.page.on("request", self.update_request_time)
         self.window_start = time.time()
         self.num_requests = 0
@@ -76,7 +76,8 @@ class Navigator:
             await self.page.goto(url)
         except Exception as e:
             return False
-        self.locations.append(url)
+        if not await self.page_already_saved(url):
+            self.pages["Page"].append(url)
         return True
 
     async def mouse_scroll(self, length):
@@ -92,7 +93,7 @@ class Navigator:
         w = await self.wait_for_delay()
         await self.page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
 
-    async def infinite_scroll(self, max_scrolls=None):
+    async def infinite_scroll(self, max_scrolls=c.MAX_SCROLLS):
         # Scrolls an infinite scrolling page until it reaches the bottom or max scrolls is reached.
         # Note: This function has yet to be tested due to a lack of any site to test yet.
         # It will be tested on a later date (whenever I feel like it)
@@ -116,14 +117,14 @@ class Navigator:
                 no_count += 1
                 if no_count >= 2:
                     break
-            if max_scrolls is not None:
+            if not max_scrolls == -1:
                 if max_scrolls < num_scrolls:
                     break
             old_height = new_height
 
     async def return_to_idx(self, idx):
         # Returns the page to a preivious url based off of its location in the locations list
-        await self.page.goto(self.locations[idx])
+        await self.page["Page"].goto(self.pages["Page"][idx])
 
     async def get_all_buttons(self):
         # Returns a list of all the buttons contained within the page.
@@ -135,10 +136,17 @@ class Navigator:
         links = await self.page.get_by_role("link").all()
         return links
     
+    async def page_already_saved(self, url):
+        # Checks if a page has already been saved...
+        for page_url in self.pages["Page"]:
+            if page_url == url:
+                return True
+        return False
+    
     async def click_all(self, button=True):
         # Clicks on all of the buttons or links and checks for the changes in the website.
         w = await self.wait_for_delay()
-        previous_page = self.locations[len(self.locations) - 1]
+        previous_page = self.pages["Page"][len(self.pages["Page"]) - 1]
         if button:
             clickables = await self.get_all_buttons()
         else:
@@ -151,27 +159,8 @@ class Navigator:
             # Insert function which checks smth (will be added later once the parser is ready)
             if self.page.url != previous_page:
                 await asyncio.sleep(.25)
-                self.locations.append(self.page.url)
+                self.pages["Page"].append(self.page.url)
                 await self.goto(previous_page)
-
-    async def harvest_data(self, parser):
-        # This Function will be altered in order to work for multiple websites (or get deleted)
-        w = await self.wait_for_delay()
-        total_data = []
-
-        collecting_data = True
-        while collecting_data:
-            html = await self.get_html()
-            data, new_url = await asyncio.to_thread(parser.parse_through_quotes, html, self.locations[0])
-            if new_url is None:
-                collecting_data = False
-            else:
-                await self.goto(new_url)
-            if len(total_data) > c.BATCH_SIZE:
-                collecting_data = False
-            total_data += data
-
-        return total_data
 
 
 class Analyzer(Navigator):
@@ -184,8 +173,9 @@ class Analyzer(Navigator):
         for part in samples:
             self.samples += part.split(" ")
         self.words = words
-        self.scraping_score = []
-        self.exploraton_score = []
+        self.pages["scraping"] = []
+        self.pages["exploration"] = []
+        self.save_page_score(self.page.url)
 
     async def get_all_buttons(self):
         # Gets all links and counts the exploration score from links
@@ -259,12 +249,17 @@ class Analyzer(Navigator):
 
         exists = await super().goto(url)
         if not exists:
-            return
+            return exists
         await asyncio.sleep(0.1)
-        self.scraping_score.append(self.judge.get_score(url, await self.get_html()))
+        if not await self.page_already_saved(url):
+            await self.save_page_score(url)
+        return exists
+    
+    async def save_page_score(self, url):
+        self.pages["scraping"].append(self.judge.get_score(url, await self.get_html()))
         _, score_1 = await self.get_all_buttons()
         _, score_2 = await self.get_all_links()
-        self.exploraton_score.append(score_1 + score_2)
+        self.pages["exploration"].append(score_1 + score_2)
     
     async def is_dead_end(self):
         # Checks if a page has no links/buttons to use to navigate to other pages.
@@ -276,4 +271,25 @@ class Analyzer(Navigator):
         return False
 
 class Explorer(Analyzer):
-    pass
+    def __init__(self, page, words, samples):
+        super().__init__(page, words, samples)
+        self.pages["scraped"] = []
+        self.pages["explored"] = []
+        self.pages["scraped"][0] = False
+        self.pages["explored"][0] = False
+
+    async def scrape_page(self, idx=None):
+        # Scrapes the page, that bout it...
+
+        if idx is not None:
+            await self.return_to_idx(idx)
+            self.pages["scraped"][idx] = True
+        else:
+            self.pages["scraped"][len(self.pages["scraped"]) - 1] = True
+        if not self.judge.is_valid(self.page.url, await self.get_html()):
+            return None
+        if await self.check_infinite_scroll():
+            await self.infinite_scroll()
+        return self.judge.get_text_samples(await self.get_html())
+        
+    
