@@ -70,6 +70,7 @@ BATCH_SIZE = config["scraper"]["data_batch_size"]
 REQUEST_LIMIT = config["scraper"]["request_limit"]
 MAX_SCROLLS = config["scraper"]["max_scrolls"]
 
+MIN_EXPLORATION_SCORE = 0.20
 NUM_MOUSE_SCROLLS = 5
 JUDGE_REJECT_SCORE = 0
 JUDGE_SCORE_CHANGE = 1
