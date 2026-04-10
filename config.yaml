@@ -17,8 +17,8 @@ gui:
   min_websites: 1
   num_default_websites: 3
   default_websites:
-    - "https://en.wikipedia.org/wiki/Backpropagation"
     - "https://quotes.toscrape.com/"
+    - "https://en.wikipedia.org/wiki/Backpropagation"
     - "https://infinite-scroll.com/demo/full-page/"
 
 # AI model selection

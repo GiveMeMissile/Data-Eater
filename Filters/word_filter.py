@@ -1,6 +1,8 @@
 class WordFilter:
     def __init__(self, words):
-        if self.check_balance(words) or words == "None":
+        if words.lower() == "none":
+            self.words = None
+        elif self.check_balance(words):
             self.words = self.prepare_words(words)
         else:
             self.words = None

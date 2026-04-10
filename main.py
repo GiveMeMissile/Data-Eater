@@ -1,8 +1,9 @@
+# Beauty is in the eye of the beholder, and the beholder is blind.
+
 from dearpygui import dearpygui as dpg
 from playwright.async_api import async_playwright
 from dearpygui_async import DearPyGuiAsync
-from Scraper.navigator import Navigator
-from Scraper.parser import Parser
+from Scraper.navigator import Explorer
 from Filters.bi_encoder import BiEncoder
 from Filters.cross_encoder import CrossEncoding
 from Filters.word_filter import WordFilter
@@ -104,7 +105,7 @@ async def can_start():
     for i in range(num_inputs):
         if dpg.get_value(c.SAMPLE_FILTER + "_" + str(i)) == "":
             can_start = False
-        
+
     if dpg.get_value(c.FILE_NAME_TAG) == "" or " " in dpg.get_value(c.FILE_NAME_TAG):
         can_start = False
 
@@ -129,7 +130,6 @@ async def start(sender, app_data):
     if not await can_start():
         await display_failure()
         return
-
     dpg.hide_item(c.OPTION_WINDOW_TAG)
 
     # Option variables to be used later
@@ -143,21 +143,31 @@ async def start(sender, app_data):
     text = user_inputs[: num_inputs]
     websites_to_scrape = websites[: num_websites]
 
+    data = []
+
     # Scraping
     async with async_playwright() as playwright:
         browser = await playwright.chromium.launch(channel=c.BROWSER, headless=c.HEADLESS)
+        scrape_call = []
+        navs = []
         for website in websites_to_scrape:
             page = await browser.new_page()
-            nav = Navigator(page)
+            nav = Explorer(page, [], text)
             works = await nav.goto(website)
             if not works:
                 await display_failure()
                 await browser.close()
                 dpg.show_item(c.OPTION_WINDOW_TAG)
                 return
-            print("Success!!!")
-        print("Total Success")
-        data = ["Temporary Data"]
+            scrape_call.append(nav.get_samples(sample_number//num_websites))
+            navs.append(nav)
+        while len(data) < sample_number + sample_number * overflow:
+            samples = await asyncio.gather(*tuple(scrape_call))
+            for sample in samples:
+                data += sample
+            scrape_call = []
+            for nav in navs:
+                scrape_call.append(nav.get_samples(sample_number//num_websites))
     
     bi_encoder = await asyncio.to_thread(BiEncoder, text, filter_value) 
     new_list = []
@@ -165,15 +175,14 @@ async def start(sender, app_data):
     w = WordFilter(words)
 
     word_list = []
-
-    for part in data:
-        if await asyncio.to_thread(w.evaluate, w.words, part):
-            word_list.append(part)
+    if w.words is not None:
+        for part in data:
+            if await asyncio.to_thread(w.evaluate, w.words, part):
+                word_list.append(part)
 
     for part in word_list:
         if await asyncio.to_thread(bi_encoder.evaluate_text, part[0]):
             new_list.append(part[0])
-    
     
     if sample_number < len(new_list):
         cross_encoder = await asyncio.to_thread(CrossEncoding, text)
@@ -186,7 +195,7 @@ async def start(sender, app_data):
         final_list = new_list
 
     dm = DataManager(final_list, name=save_name)
-    # await asyncio.to_thread(dm.save_data, file_type)
+    await asyncio.to_thread(dm.save_data, file_type)
     dpg.add_text("Data Has been Saved!!!", parent=c.DISPLAY_WINDOW_TAG)
 
 

@@ -1,4 +1,4 @@
-from Scraper.parser import Judge
+from Scraper.parser import Judge, Parser
 import constants as c
 import asyncio
 import time
@@ -37,7 +37,7 @@ class Navigator:
         # Tracks the number of request being made to ensure it does not go over the rate limit
 
         self.num_requests += 1
-        print(f"Num Requests: {self.num_requests} | Time Window: {time.time() - self.window_start}")
+        # print(f"Num Requests: {self.num_requests} | Time Window: {time.time() - self.window_start}")
         if self.num_requests >= c.REQUEST_LIMIT:
             await self.wait_for_reset()
 
@@ -81,10 +81,10 @@ class Navigator:
         try: 
             await self.page.goto(url)
         except Exception as e:
-            return False
+            return False, False
         if not await self.page_already_saved(url):
-            self.pages["Page"].append(url)
-        return True
+            return True, False
+        return True, True
 
     async def mouse_scroll(self, length):
         # Uses the mouse from playwright in order to scroll down a page length pixels
@@ -129,8 +129,9 @@ class Navigator:
             old_height = new_height
 
     async def return_to_idx(self, idx):
-        # Returns the page to a preivious url based off of its location in the locations list
-        await self.page["Page"].goto(self.pages["Page"][idx])
+        # Returns the page to a previous url based off of its location in the locations list
+        # print(idx)
+        await self.goto(self.pages["Page"][idx])
 
     async def get_all_buttons(self):
         # Returns a list of all the buttons contained within the page.
@@ -158,8 +159,15 @@ class Navigator:
     async def click_on_clickable(self, clickable):
         w = await self.wait_for_delay()
         previous_page = self.page.url
+        # print(previous_page)
         await clickable.click()
         return previous_page
+    
+    async def save_page_score(self, url, alread_exists):
+        if alread_exists:
+            return
+        
+        self.pages["Page"].append(url)
 
 
 class Analyzer(Navigator):
@@ -174,7 +182,6 @@ class Analyzer(Navigator):
         self.words = words
         self.pages["scraping"] = []
         self.pages["exploration"] = []
-        self.save_page_score(self.page.url)
 
     async def get_all_buttons(self):
         # Gets all links and counts the exploration score from links
@@ -184,13 +191,13 @@ class Analyzer(Navigator):
         prioritized_list = []
         for button in buttons:
             name = await button.inner_text()
-            if any(priority in name for priority in (c.MAX_PRIORITY + self.words)):
+            if any(priority in name.lower() for priority in (c.MAX_PRIORITY + self.words)):
                 prioritized_list.append(button)
                 score += 0.1
         
         for button in buttons:
             name = await button.inner_text()
-            if any(priority in name for priority in (c.NORMAL_PRIORITY + self.samples)):
+            if any(priority in name.lower() for priority in (c.NORMAL_PRIORITY + self.samples)):
                 prioritized_list.append(button)
                 score += 0.05
         
@@ -198,7 +205,7 @@ class Analyzer(Navigator):
             if any(button == b for b in prioritized_list):
                 continue
             name = await button.inner_text()
-            if not any(reject in name for reject in c.REJECT):
+            if not any(reject in name.lower() for reject in c.REJECT):
                 prioritized_list.append(button)
                 score += 0.025
 
@@ -206,31 +213,47 @@ class Analyzer(Navigator):
     
     async def get_all_links(self):
         # Gets all links and counts the exploration score from links
-
+        start = time.time()
         score = 0
         links = await super().get_all_links()
         prioritized_list = []
         for link in links:
             text = await link.inner_text()
-            if any(priority in text for priority in (c.MAX_PRIORITY + self.words)):
+            if any(priority in text.lower() for priority in (c.MAX_PRIORITY + self.words)):
                 prioritized_list.append(link)
                 score += 0.1
         
         for link in links:
             text = await link.inner_text()
-            if any(priority in text for priority in (c.NORMAL_PRIORITY + self.samples)):
+            if any(priority in text.lower() for priority in (c.NORMAL_PRIORITY + self.samples)):
                 prioritized_list.append(link)
                 score += 0.05
         
         for link in links:
-            text = await link.inner_text()
             if any(link == b for b in prioritized_list):
                 continue
-            if not any(reject in text for reject in c.REJECT):
+            text = await link.inner_text()
+            if not any(reject in text.lower() for reject in c.REJECT):
                 prioritized_list.append(link)
                 score += 0.025
 
-        return prioritized_list, score
+        urls = []
+        for link in prioritized_list:
+            urls.append(await link.get_attribute("href"))
+        repeats = []
+        for i in range(len(urls)):
+            for j in range(i + 1, len(urls)):
+                if urls[i] == urls[j]:
+                    repeats.append(j)
+        final_links = []
+        for i in range(len(prioritized_list)):
+            if not any(i == j for j in repeats):
+                final_links.append(prioritized_list[i])
+
+        end = time.time()
+        print(f"Time Taken: {end - start}")
+
+        return final_links, score
 
     async def check_infinite_scroll(self):
         # Checks if a page is infinitely scrollable. 
@@ -246,17 +269,18 @@ class Analyzer(Navigator):
     async def goto(self, url):
         # Go to a different page and saves its exploration and scraping score. 
 
-        exists = await super().goto(url)
+        exists, already_exists = await super().goto(url)
         if not exists:
             return exists
-        await asyncio.sleep(0.1)
-        await self.save_page_score(url)
+        await asyncio.sleep(0.25)
+        await self.save_page_score(url, already_exists)
         return exists
     
-    async def save_page_score(self, url):
+    async def save_page_score(self, url, alread_exists):
         # Saves important information for each page
+        await super().save_page_score(url, alread_exists)
 
-        if await self.page_already_saved(url):
+        if alread_exists:
             return
 
         self.pages["scraping"].append(self.judge.get_score(url, await self.get_html()))
@@ -279,13 +303,16 @@ class Explorer(Analyzer):
         super().__init__(page, words, samples)
         self.pages["scraped"] = []
         self.pages["explored"] = []
-        self.pages["scraped"][0] = False
-        self.pages["explored"][0] = False
+        if self.page.url != "about:blank":
+            self.pages["scraped"].append(False)
+            self.pages["explored"].append(False)
+        self.parser = Parser()
 
-    async def save_page_score(self, url):
-        await super().save_page_score(url)
-        self.pages["scraped"].append(False)
-        self.pages["explored"].append(False)
+    async def save_page_score(self, url, alread_exists):
+        await super().save_page_score(url, alread_exists)
+        if not alread_exists:
+            self.pages["scraped"].append(False)
+            self.pages["explored"].append(False)
 
     async def scrape_page(self, idx=None):
         # Scrapes the page, that bout it...
@@ -295,13 +322,17 @@ class Explorer(Analyzer):
         else:
             await self.return_to_idx(idx)
         if self.pages["scraped"][idx]:
+            print("Failed because it has been scraped")
             return None
+        print(f"Idx: {idx}")
         self.pages["scraped"][idx] = True
         if not self.judge.is_valid(self.page.url, await self.get_html()):
+            print("Failed Because it has a low score")
+            print(f"Score: {self.judge.get_score(self.page.url, await self.get_html())}")
             return None
         if await self.check_infinite_scroll():
             await self.infinite_scroll()
-        return self.judge.get_text_samples(await self.get_html())
+        return self.parser.get_text_samples(await self.get_html())
     
     async def explore_page(self, idx=None):
         if idx is None:
@@ -311,64 +342,70 @@ class Explorer(Analyzer):
         if self.pages["explored"][idx]:
             return None
         self.pages["explored"][idx] = True
-        if self.pages["exploration"] < c.MIN_EXPLORATION_SCORE:
+        if self.pages["exploration"][idx] < c.MIN_EXPLORATION_SCORE:
             return None
         await self.click_all(button=True)
         await self.click_all(button=False)
         
     async def click_on_clickable(self, clickable):
         previous = await super().click_on_clickable(clickable)
+        await asyncio.sleep(1)
         if previous != self.page.url:
-            self.save_page_score()
+            await self.save_page_score(self.page.url, await self.page_already_saved(self.page.url))
             return True
         return False
     
     async def click_all(self, button=True):
         # Clicks on all of the buttons or links and checks for the changes in the website.
-        idx = self.pages["Page"][self.get_current_idx()]
+        idx = await self.get_current_idx()
         w = await self.wait_for_delay()
         if button:
             clickables, _ = await self.get_all_buttons()
         else:
             clickables, _ = await self.get_all_links()
+        # print("Got All Clickables")
 
         for clickable in clickables:
             new_page_loaded = await self.click_on_clickable(clickable)
-            await asyncio.sleep(0.25)
+            # print("Clicked")
             if new_page_loaded:
-                await asyncio.sleep(0.75)
-                self.return_to_idx(idx)
+                await self.return_to_idx(idx)
+                # print("Returned")
                 await asyncio.sleep(1)
 
     async def get_samples(self, num_samples):
         samples = []
         while len(samples) <= num_samples:
-            for i in range(self.pages["Page"]):
+            for i in range(len(self.pages["Page"])):
+                print("Scraping")
                 if self.pages["scraped"][i] or self.pages["scraping"][i] <= 0:
+                    print("Scraping Cancelled")
                     continue
                 await self.goto(self.pages["Page"][i])
-                await asyncio(1)
-                s = await self.scrape_page()
+                await asyncio.sleep(1)
+                s = await self.scrape_page(idx=i)
                 if s is not None:
                     samples += s
-                if samples >= num_samples:
-                    break
-
+                print(f"Samples: {len(samples)}")
+                if len(samples) >= num_samples:
+                    return samples, False
             count = 0
             explored = False
             e_list = self.pages["exploration"].copy()
             while count < len(self.pages["Page"]) and not explored:
                 m_idx = self.pages["exploration"].index(max(e_list))
-                if self.pages["explored"][m_idx] or self.pages["exploration"] < c.MIN_EXPLORATION_SCORE:
+                if self.pages["explored"][m_idx] or self.pages["exploration"][m_idx] < c.MIN_EXPLORATION_SCORE:
                     e_list.remove(e_list)
                     count += 1
                     continue
+                print("Exploring")
                 await self.goto(self.pages["Page"][m_idx])
-                await asyncio(1)
+                await asyncio.sleep(1)
                 await self.explore_page()
                 explored = True
             if not explored:
                 return samples, True
+            print("Again it goes")
 
         return samples, False
 

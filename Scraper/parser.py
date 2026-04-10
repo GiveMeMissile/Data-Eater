@@ -11,7 +11,7 @@ class Parser:
     # Class which contain tools which will parse messy HTML into organized data.
     num_text_samples = 0
 
-    def __init__(self, min_length=100):
+    def __init__(self, min_length=50):
         self.min_length = min_length
 
     def get_raw_text(self, html):
