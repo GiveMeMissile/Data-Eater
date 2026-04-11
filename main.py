@@ -17,6 +17,8 @@ num_websites = c.DEFAULT_WEBSITES
 user_inputs = ["", "", "", "", "", "", "", "", "", ""]
 websites = [c.DEFAULT_WEBSITE_1, c.DEFAULT_WEBSITE_2, c.DEFAULT_WEBSITE_3, "", "", "", "", "", "", ""]
 started = False
+num_samples = 0
+page_processes = {}
 
 dpg_async = DearPyGuiAsync()
 
@@ -122,11 +124,25 @@ async def display_failure():
     dpg.set_item_label(c.SUBMIT_TAG, "Submit - Failed")
 
 
+def create_website_table():
+    pass
+
+
+def create_sample_graph():
+    pass
+
+
+def print_process(sender, appdata):
+    for url, process in page_processes.items():
+        print(f"Page: {url} | Processe: {process}")
+    print(f"Samples: {num_samples}")
+
+
 async def start(sender, app_data):
     # Core function which runs the scraping and processing of data. 
 
     # Check if the process can begin
-    global started
+    global started, num_samples, page_processes
     if not await can_start():
         await display_failure()
         return
@@ -142,17 +158,23 @@ async def start(sender, app_data):
     words = dpg.get_value(c.WORD_FILTER)
     text = user_inputs[: num_inputs]
     websites_to_scrape = websites[: num_websites]
+    page_processes = {"Website": ["Scraping", "Exploring", "Sleeping"]}
+    for i in range(len(websites_to_scrape)):
+        page_processes[websites_to_scrape[i]] = [False, False, False]
 
     data = []
 
     # Scraping
+    bi_encoder = await asyncio.to_thread(BiEncoder, text, filter_value)
+    w = WordFilter(words)
     async with async_playwright() as playwright:
         browser = await playwright.chromium.launch(channel=c.BROWSER, headless=c.HEADLESS)
         scrape_call = []
         navs = []
         for website in websites_to_scrape:
             page = await browser.new_page()
-            nav = Explorer(page, [], text)
+            process = page_processes[website]
+            nav = Explorer(page, process, [], text)
             works = await nav.goto(website)
             if not works:
                 await display_failure()
@@ -161,38 +183,38 @@ async def start(sender, app_data):
                 return
             scrape_call.append(nav.get_samples(sample_number//num_websites))
             navs.append(nav)
+
         while len(data) < sample_number + sample_number * overflow:
-            samples = await asyncio.gather(*tuple(scrape_call))
-            for sample in samples:
-                data += sample
+            samples = []
+            s = await asyncio.gather(*tuple(scrape_call))
+            for sample in s:
+                samples += sample
+                num_samples += len(sample[0])
             scrape_call = []
+
+            word_list = []
+            if w.words is not None:
+                for part in samples:
+                    if await asyncio.to_thread(w.evaluate, w.words, part[0]):
+                        word_list.append(part)
+            new_list = []
+            for part in word_list:
+                if await asyncio.to_thread(bi_encoder.evaluate_text, part[0]):
+                    new_list.append(part[0])
+            data += new_list
+
             for nav in navs:
-                scrape_call.append(nav.get_samples(sample_number//num_websites))
+                scrape_call.append(nav.get_samples(sample_number//num_websites)) 
     
-    bi_encoder = await asyncio.to_thread(BiEncoder, text, filter_value) 
-    new_list = []
-
-    w = WordFilter(words)
-
-    word_list = []
-    if w.words is not None:
-        for part in data:
-            if await asyncio.to_thread(w.evaluate, w.words, part):
-                word_list.append(part)
-
-    for part in word_list:
-        if await asyncio.to_thread(bi_encoder.evaluate_text, part[0]):
-            new_list.append(part[0])
-    
-    if sample_number < len(new_list):
+    if sample_number < len(data):
         cross_encoder = await asyncio.to_thread(CrossEncoding, text)
-        c_list = await asyncio.to_thread(cross_encoder.get_comparison_list, new_list)
+        c_list = await asyncio.to_thread(cross_encoder.get_comparison_list, data)
         idx_list = await asyncio.to_thread(utils.get_max_indexes, c_list, sample_number) 
         final_list = []
         for idx in idx_list:
             final_list.append(new_list[idx])
     else:
-        final_list = new_list
+        final_list = data
 
     dm = DataManager(final_list, name=save_name)
     await asyncio.to_thread(dm.save_data, file_type)
@@ -206,7 +228,7 @@ if __name__ == "__main__":
 
     with dpg.window(label="Display", width=800, height=700, tag=c.DISPLAY_WINDOW_TAG):
         dpg.add_text("Display")
-        dpg.add_button(label="Test")
+        dpg.add_button(label="Test", callback=print_process)
 
     with dpg.window(label="Select", width=800, height=700, tag=c.OPTION_WINDOW_TAG):
 

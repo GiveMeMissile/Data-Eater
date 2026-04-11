@@ -22,7 +22,7 @@ import time
 class Navigator:
     # Class which uses Playwright in order to navigate the internet and get html data to be used by the parser
 
-    def __init__(self, page):
+    def __init__(self, page, process):
 
         self.page = page
         self.pages = {"Page": []}
@@ -32,6 +32,8 @@ class Navigator:
         self.window_start = time.time()
         self.num_requests = 0
         self.delay = False
+        self.process = process
+        print(self.process)
 
     async def update_request_time(self):
         # Tracks the number of request being made to ensure it does not go over the rate limit
@@ -56,7 +58,9 @@ class Navigator:
         # Function which waits until the current time window ends, stopping all requests until a new window has started
         print("Sleeping, zzzzzzzzzzzzzzzzz")
         self.delay = True
+        self.process[2] = True
         await asyncio.sleep(c.LIMIT_WINDOW - (time.time() - self.window_start))
+        self.process[2] = False
         self.delay = False
 
     # Function which uses playwright to access static html
@@ -173,8 +177,8 @@ class Navigator:
 class Analyzer(Navigator):
     # This class is focused on getting information about the page
 
-    def __init__(self, page, words, samples):
-        super().__init__(page)
+    def __init__(self, page, process, words, samples):
+        super().__init__(page, process)
         self.judge = Judge()
         self.samples = []
         for part in samples:
@@ -299,8 +303,8 @@ class Analyzer(Navigator):
 
 
 class Explorer(Analyzer):
-    def __init__(self, page, words, samples):
-        super().__init__(page, words, samples)
+    def __init__(self, page, process ,words, samples):
+        super().__init__(page, process, words, samples)
         self.pages["scraped"] = []
         self.pages["explored"] = []
         if self.page.url != "about:blank":
@@ -376,6 +380,7 @@ class Explorer(Analyzer):
     async def get_samples(self, num_samples):
         samples = []
         while len(samples) <= num_samples:
+            self.process[0] = True
             for i in range(len(self.pages["Page"])):
                 print("Scraping")
                 if self.pages["scraped"][i] or self.pages["scraping"][i] <= 0:
@@ -389,9 +394,11 @@ class Explorer(Analyzer):
                 print(f"Samples: {len(samples)}")
                 if len(samples) >= num_samples:
                     return samples, False
+            self.process[0] = False
             count = 0
             explored = False
             e_list = self.pages["exploration"].copy()
+            self.process[1] = True
             while count < len(self.pages["Page"]) and not explored:
                 m_idx = self.pages["exploration"].index(max(e_list))
                 if self.pages["explored"][m_idx] or self.pages["exploration"][m_idx] < c.MIN_EXPLORATION_SCORE:
@@ -403,6 +410,7 @@ class Explorer(Analyzer):
                 await asyncio.sleep(1)
                 await self.explore_page()
                 explored = True
+            self.process[1] = False
             if not explored:
                 return samples, True
             print("Again it goes")
