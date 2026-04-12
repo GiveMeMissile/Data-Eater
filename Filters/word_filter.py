@@ -89,7 +89,7 @@ class WordFilter:
                     word_map["Maps"].append(self.create_map(s))
                     continue
             
-            if ("AND" == s or "OR" == s or "AND NOT" == s or "OR NOT" == s) and (not i == 0 or not i == len(sequence) - 1):
+            if ("AND" == s or "OR" == s or "AND NOT" == s or "OR NOT" == s or s == "NOT") and (not i == 0 or not i == len(sequence) - 1):
                 word_map["Operations"].append(s)
                 continue
             s = s.split(" ")
@@ -120,7 +120,7 @@ class WordFilter:
 
     def evaluate(self, maps, text):
         # This is some of the worst code I've ever written -_-
-
+        text = "_" + text # Simple addition to ensure that _ can be used in not statements (this is so scuffed)
         if maps is None:
             return True
 
