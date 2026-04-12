@@ -56,6 +56,12 @@ FILE_NAME_TAG = "file_name"
 
 # Display Tags:
 DISPLAY_WINDOW_TAG = "display"
+WEBSITE_TABLE_TAG = "website_display"
+GRAPH_TAG = "sample_graph"
+COLLECTED_SAMPLES_AXIS_TAG = "collected_axis"
+SERIES_ONE = "series_one"
+SERIES_TWO = "series_two" 
+X_AXIS = "x_axis"
 
 # AI Model Options:
 BI_ENCODER_MODEL = config["bi_encoder_model_name"]

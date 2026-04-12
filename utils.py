@@ -29,3 +29,8 @@ def get_max_indexes(arr, n):
         c_arr.pop(len(c_arr) - 1)
     return max_indexes
 
+def create_list_of_num(n, num):
+    num_list = []
+    for i in range(n):
+        num_list.append(num)
+    return num_list

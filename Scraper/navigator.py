@@ -33,7 +33,6 @@ class Navigator:
         self.num_requests = 0
         self.delay = False
         self.process = process
-        print(self.process)
 
     async def update_request_time(self):
         # Tracks the number of request being made to ensure it does not go over the rate limit

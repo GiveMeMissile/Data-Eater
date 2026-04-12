@@ -1,4 +1,5 @@
 # Beauty is in the eye of the beholder, and the beholder is blind.
+# And so am I, as I gouged out my eyes due to this project...
 
 from dearpygui import dearpygui as dpg
 from playwright.async_api import async_playwright
@@ -11,6 +12,7 @@ from data_manager import DataManager
 import constants as c
 import asyncio
 import utils
+import copy
 
 num_inputs = c.DEFAULT_INPUT
 num_websites = c.DEFAULT_WEBSITES
@@ -125,11 +127,56 @@ async def display_failure():
 
 
 def create_website_table():
-    pass
+    with dpg.table(header_row=True, policy=dpg.mvTable_SizingFixedFit, resizable=True, no_host_extendX=True, borders_innerV=True,
+              borders_outerV=True, borders_outerH=True, tag=c.WEBSITE_TABLE_TAG, parent=c.DISPLAY_WINDOW_TAG):
+        num_columns = 0
+        for keys in page_processes:
+            dpg.add_table_column(label=keys)
+            num_columns += 1
+        for i in range(0, 3):
+            with dpg.table_row():
+                for process in page_processes.values():
+                    dpg.add_text(process[i])
 
 
-def create_sample_graph():
-    pass
+async def update_table():
+    original_process = copy.deepcopy(page_processes)
+    while True:
+        await asyncio.sleep(1)
+        if original_process == page_processes:
+            # print(f"Original: {original_process} | new: {page_processes}")
+            continue
+        original_process = copy.deepcopy(page_processes)
+        dpg.delete_item(c.WEBSITE_TABLE_TAG)
+        create_website_table()
+
+
+def create_sample_graph(samples, times, goal):
+    with dpg.plot(label="Samples", height=400, width=400, tag=c.GRAPH_TAG, parent=c.DISPLAY_WINDOW_TAG, before=c.WEBSITE_TABLE_TAG):
+        dpg.add_plot_legend()
+        dpg.add_plot_axis(dpg.mvXAxis, label="Time (s)", tag=c.X_AXIS)
+        dpg.add_plot_axis(dpg.mvYAxis, label="Samples", tag=c.COLLECTED_SAMPLES_AXIS_TAG)
+
+        dpg.add_line_series(times, samples, label="Collected Samples", parent=c.COLLECTED_SAMPLES_AXIS_TAG, tag=c.SERIES_ONE)
+        dpg.add_line_series(times, utils.create_list_of_num(len(times), goal), label="Goal", parent=c.COLLECTED_SAMPLES_AXIS_TAG, tag=c.SERIES_TWO)
+    print("End")
+
+
+async def manage_graphs(goal):
+    time_sequence = [0]
+    sample_sequence = [0]
+    current_time = 0
+    print("Started")
+    while True:
+        print("Updated")
+        await asyncio.sleep(1)
+        current_time += 1
+        time_sequence.append(current_time)
+        sample_sequence.append(num_samples)
+        dpg.set_value(c.SERIES_ONE, (time_sequence, sample_sequence))
+        dpg.set_value(c.SERIES_TWO, (time_sequence, utils.create_list_of_num(len(time_sequence), goal)))
+        dpg.fit_axis_data(c.X_AXIS)
+        dpg.fit_axis_data(c.COLLECTED_SAMPLES_AXIS_TAG)
 
 
 def print_process(sender, appdata):
@@ -158,15 +205,20 @@ async def start(sender, app_data):
     words = dpg.get_value(c.WORD_FILTER)
     text = user_inputs[: num_inputs]
     websites_to_scrape = websites[: num_websites]
+    num_required_samples = sample_number + sample_number * overflow
     page_processes = {"Website": ["Scraping", "Exploring", "Sleeping"]}
     for i in range(len(websites_to_scrape)):
         page_processes[websites_to_scrape[i]] = [False, False, False]
-
+    create_website_table()
+    table_task = asyncio.create_task(update_table())
+    create_sample_graph([0], [0], num_required_samples)
+    graph_task = asyncio.create_task(manage_graphs(num_required_samples))
     data = []
 
     # Scraping
     bi_encoder = await asyncio.to_thread(BiEncoder, text, filter_value)
     w = WordFilter(words)
+
     async with async_playwright() as playwright:
         browser = await playwright.chromium.launch(channel=c.BROWSER, headless=c.HEADLESS)
         scrape_call = []
@@ -180,11 +232,13 @@ async def start(sender, app_data):
                 await display_failure()
                 await browser.close()
                 dpg.show_item(c.OPTION_WINDOW_TAG)
+                table_task.cancel()
+                graph_task.cancel()
                 return
             scrape_call.append(nav.get_samples(sample_number//num_websites))
             navs.append(nav)
 
-        while len(data) < sample_number + sample_number * overflow:
+        while len(data) < num_required_samples:
             samples = []
             s = await asyncio.gather(*tuple(scrape_call))
             for sample in s:
